@@ -11,16 +11,11 @@
             height: 100vh; overflow-x: hidden; overflow-y: auto; touch-action: manipulation;
             position: relative;
         }
-        /* 左上のキャラアイコン（サイズを130pxに拡大） */
+        /* 左上のキャラアイコン */
         #kapa-icon {
-            position: absolute; 
-            top: 5px; 
-            left: 5px;
-            width: 130px; /* ここを大きくしました */
-            height: auto; 
-            object-fit: contain; 
-            z-index: 100;
-            pointer-events: none; /* 画像がボタン操作の邪魔をしないように設定 */
+            position: absolute; top: 5px; left: 5px;
+            width: 60px; height: auto; object-fit: contain; z-index: 100;
+            pointer-events: none; 
         }
         /* 安置情報テキスト */
         #safety-text {
@@ -33,9 +28,7 @@
             display: flex; justify-content: center; align-items: center;
             margin-top: 5px;
         }
-        #layer-canvas {
-            position: absolute; top: 0; left: 0; z-index: -1;
-        }
+        #layer-canvas { position: absolute; top: 0; left: 0; z-index: -1; }
         #timer-text {
             font-size: 140px; font-weight: 900; font-family: monospace;
             background: linear-gradient(to bottom, #00fbff, #007fff);
@@ -65,9 +58,7 @@
 </head>
 <body>
 
-    <!-- キャラアイコン -->
     <img id="kapa-icon" src="kapa.png" alt="kapa">
-
     <div id="safety-text"></div>
 
     <div id="circle-area">
@@ -82,7 +73,6 @@
 
     <button class="stop-btn" onclick="resetAll()">STOP</button>
 
-    <!-- 音量調節バー -->
     <div id="volume-area">
         <span style="font-size: 14px; font-weight: bold;">音量</span>
         <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="1" oninput="updateVolume(this.value)">
@@ -98,8 +88,8 @@
         let currentIsA = true; 
         let safetyText = "";
         let currentSoundType = "G"; 
+        let wakeLock = null; // スリープ防止用
 
-        // 音声定義
         const audioAka = new Audio('aka321.wav');
         const audioKiiro = new Audio('kiiro321.wav');
         const audioA = new Audio('a321.wav');
@@ -107,18 +97,32 @@
         const audioC = new Audio('c321.wav');
         const allAudios = [audioAka, audioKiiro, audioA, audioB, audioC];
 
-        function updateVolume(val) {
-            allAudios.forEach(a => a.volume = val);
+        // --- スリープ防止機能 ---
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log("スリープ防止：有効");
+                }
+            } catch (err) {
+                console.error("スリープ防止失敗:", err);
+            }
         }
 
+        // タブが戻ってきた時にスリープ防止を再開
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                await requestWakeLock();
+            }
+        });
+
+        function updateVolume(val) { allAudios.forEach(a => a.volume = val); }
+
         function unlockAudio() {
+            requestWakeLock(); // ボタンを押した瞬間にスリープ防止
             allAudios.forEach(a => {
                 a.muted = true;
-                a.play().then(() => {
-                    a.pause();
-                    a.currentTime = 0;
-                    a.muted = false;
-                }).catch(() => {});
+                a.play().then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(() => {});
             });
         }
 
@@ -131,21 +135,17 @@
             const pCtx = pCanvas.getContext('2d');
             pCanvas.width = 12; pCanvas.height = 12;
             pCtx.strokeStyle = "rgba(0,0,0,0.4)"; pCtx.lineWidth = 1;
-            pCtx.beginPath();
-            pCtx.moveTo(0, 0); pCtx.lineTo(12, 12);
-            pCtx.moveTo(12, 0); pCtx.lineTo(0, 12);
-            pCtx.stroke();
+            pCtx.beginPath(); pCtx.moveTo(0, 0); pCtx.lineTo(12, 12);
+            pCtx.moveTo(12, 0); pCtx.lineTo(0, 12); pCtx.stroke();
             return pCanvas;
         }
 
         function drawRange(ctx, centerX, centerY, maxRadius, startPer, endPer, color, isGrid = false) {
             const innerR = maxRadius * (startPer / 100);
             const outerR = maxRadius * (endPer / 100);
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, outerR, 0, Math.PI * 2);
+            ctx.beginPath(); ctx.arc(centerX, centerY, outerR, 0, Math.PI * 2);
             ctx.arc(centerX, centerY, innerR, 0, Math.PI * 2, true);
-            ctx.fillStyle = color;
-            ctx.fill();
+            ctx.fillStyle = color; ctx.fill();
             if (isGrid) {
                 const gridPattern = ctx.createPattern(createGridPattern(), 'repeat');
                 ctx.fillStyle = gridPattern; ctx.fill();
@@ -155,18 +155,12 @@
         function drawDynamicCircles() {
             const canvas = document.getElementById('layer-canvas');
             const ctx = canvas.getContext('2d');
-            if(!ctx) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if(!ctx) return; ctx.clearRect(0, 0, canvas.width, canvas.height);
             if (!isRunning || currentIsA) return;
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const maxRadius = 158;
-            const yellowColor = "#FFEB3B";
-            const safeGreen = "#E8F5E9";
-
+            const centerX = canvas.width / 2; const centerY = canvas.height / 2;
+            const maxRadius = 158; const yellowColor = "#FFEB3B"; const safeGreen = "#E8F5E9";
             ctx.beginPath(); ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2);
             ctx.fillStyle = safeGreen; ctx.fill();
-
             if (currentSoundType === 'A') {
                 drawRange(ctx, centerX, centerY, maxRadius, 0, 15, yellowColor); 
                 drawRange(ctx, centerX, centerY, maxRadius, 30, 50, yellowColor, true); 
@@ -179,7 +173,6 @@
                 drawRange(ctx, centerX, centerY, maxRadius, 35, 65, yellowColor); 
                 drawRange(ctx, centerX, centerY, maxRadius, 90, 100, yellowColor); 
             }
-
             ctx.beginPath(); ctx.arc(centerX, centerY, maxRadius * 0.15, 0, Math.PI * 2);
             ctx.strokeStyle = "rgba(0,0,0,0.8)"; ctx.lineWidth = 2; ctx.stroke();
             drawRange(ctx, centerX, centerY, maxRadius, 30, 50, "rgba(0,0,0,0.05)", true);
@@ -196,25 +189,22 @@
         }
 
         function resetAll() {
+            if (wakeLock !== null) { wakeLock.release().then(() => wakeLock = null); }
             clearInterval(timerId); isRunning = false; timeLeft = 0; safetyText = ""; updateUI();
         }
 
         function startTimer(startWithA, isFirst) {
-            resetAll(); isRunning = true; safetyText = ""; currentIsA = startWithA; currentSoundType = "G";
+            resetAll(); isRunning = true; currentIsA = startWithA; currentSoundType = "G";
             let firstCycle = isFirst;
             const runCycle = () => {
-                let duration = firstCycle ? 6 : 23;
-                firstCycle = false; timeLeft = duration;
+                let duration = firstCycle ? 6 : 23; firstCycle = false; timeLeft = duration;
                 let warningPlayed = false;
                 timerId = setInterval(() => {
                     timeLeft -= 0.016;
                     if (timeLeft <= 5 && !warningPlayed) {
-                        currentIsA ? audioAka.play() : audioKiiro.play();
-                        warningPlayed = true;
+                        currentIsA ? audioAka.play() : audioKiiro.play(); warningPlayed = true;
                     }
-                    if (timeLeft <= 0) {
-                        clearInterval(timerId); currentIsA = !currentIsA; runCycle();
-                    }
+                    if (timeLeft <= 0) { clearInterval(timerId); currentIsA = !currentIsA; runCycle(); }
                     updateUI();
                 }, 16);
             };
@@ -230,10 +220,7 @@
             ];
             let idx = 0; let isVeryFirst = true;
             const runCircleStep = () => {
-                let step = sequence[idx];
-                currentSoundType = step.s;
-                timeLeft = (isVeryFirst && idx === 0) ? 5 : step.t;
-                safetyText = step.m;
+                let step = sequence[idx]; currentSoundType = step.s; timeLeft = (isVeryFirst && idx === 0) ? 5 : step.t; safetyText = step.m;
                 let warningPlayed = false;
                 timerId = setInterval(() => {
                     timeLeft -= 0.016;
@@ -244,10 +231,7 @@
                         warningPlayed = true;
                     }
                     if (timeLeft <= 0) {
-                        clearInterval(timerId);
-                        idx = (idx + 1) % sequence.length;
-                        if(idx === 0) isVeryFirst = false;
-                        runCircleStep();
+                        clearInterval(timerId); idx = (idx + 1) % sequence.length; if(idx === 0) isVeryFirst = false; runCircleStep();
                     }
                     updateUI();
                 }, 16);
