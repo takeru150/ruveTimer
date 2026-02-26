@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ルベランタイマー Web</title>
+    <style>
+        /* Android版のデザインを再現 */
+        body {
+            margin: 0; font-family: sans-serif; background: white;
+            display: flex; flex-direction: column; align-items: center;
+            height: 100vh; overflow-y: auto; touch-action: manipulation;
+        }
+        #safety-text { height: 50px; font-size: 28px; font-weight: 900; margin-top: 10px; color: #333; }
+        
+        /* 黄色いサークルの再現 */
+        #circle-area {
+            position: relative; width: 300px; height: 300px;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .yellow-circle {
+            position: absolute; width: 260px; height: 260px;
+            border-radius: 50%; border: 10px solid black;
+            outline: 40px solid #FFFFEB; /* yellowBase */
+            z-index: -1;
+        }
+        #timer-text {
+            font-size: 140px; font-weight: 900; font-family: monospace;
+            background: linear-gradient(to bottom, #FFF176, #FF9800);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(4px 4px 0px black);
+        }
+
+        /* ボタンのデザイン */
+        .btn-row { display: flex; width: 90%; gap: 10px; height: 140px; margin-top: 20px; }
+        button { border: 4px solid black; border-radius: 24px; font-weight: bold; cursor: pointer; box-shadow: 0 8px 15px rgba(0,0,0,0.2); }
+        
+        .circle-btn { flex: 4; background: linear-gradient(#4A148C, #7B1FA2); color: white; font-size: 16px; }
+        .grand-btn { flex: 6; background: linear-gradient(#0D47A1, #1976D2); color: white; font-size: 18px; }
+        .stop-btn { width: 150px; height: 60px; background: gray; color: white; margin: 20px 0; font-size: 20px; }
+        
+        .re-adjust { width: 90%; height: 70px; margin-bottom: 8px; color: white; font-size: 18px; }
+        .red-btn { background: #F44336; }
+        .yellow-btn { background: #FFEB3B; color: black; }
+
+        /* 背景ストライプの再現 */
+        .stripe-bg {
+            background: repeating-linear-gradient(-45deg, #E57373, #E57373 70px, #66BB6A 70px, #66BB6A 140px);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="safety-text"></div>
+
+    <div id="circle-area">
+        <div id="circle-deco"></div>
+        <div id="timer-text">0</div>
+    </div>
+
+    <div class="btn-row">
+        <button class="circle-btn" onclick="startCircle()">サークルカラミティの<br>ふきだしが出たら押す</button>
+        <button class="grand-btn" onclick="startGrand()">グランドカラミティの<br>ふきだしが出たら押す</button>
+    </div>
+
+    <button class="stop-btn" onclick="resetAll()">STOP</button>
+
+    <button class="re-adjust red-btn" onclick="startTimer(false, false)">再調整（赤床が出たら押す）</button>
+    <button class="re-adjust yellow-btn" onclick="startTimer(true, false)">再調整（黄床が出たら押す）</button>
+
+    <script>
+        let timeLeft = 0;
+        let timerId = null;
+        let currentIsA = true;
+        let safetyText = "";
+
+        // 音声ファイルの準備（rawフォルダにあるものをサーバーの同じ場所に置く想定）
+        const audioA = new Audio('aka321.mp3');
+        const audioB = new Audio('kiiro321.mp3');
+        const audioC = new Audio('ao321.mp3');
+
+        function updateUI() {
+            document.getElementById('timer-text').innerText = Math.ceil(timeLeft);
+            document.getElementById('safety-text').innerText = safetyText;
+            
+            // 背景とサークルの切り替え
+            if (timeLeft > 0) {
+                if (currentIsA) {
+                    document.body.className = "stripe-bg";
+                    document.getElementById('circle-deco').className = "";
+                } else {
+                    document.body.className = "";
+                    document.getElementById('circle-deco').className = "yellow-circle";
+                }
+            } else {
+                document.body.className = "";
+                document.getElementById('circle-deco').className = "";
+            }
+        }
+
+        function resetAll() {
+            clearInterval(timerId);
+            timeLeft = 0;
+            safetyText = "";
+            updateUI();
+        }
+
+        function startTimer(startWithA, isFirst) {
+            resetAll();
+            currentIsA = startWithA;
+            timeLeft = isFirst ? 6 : 23;
+            runTimer(() => {
+                currentIsA = !currentIsA;
+                return 23;
+            }, isFirst);
+        }
+
+        function startCircle() {
+            resetAll();
+            const seq = [
+                {t:5, s:'A', m:'線上安置'}, {t:24, s:'A', m:'線上安置'}, 
+                {t:21, s:'B', m:'金網安置'}, {t:23, s:'A', m:'線上安置'}, 
+                {t:21, s:'C', m:'外周真ん中安置'}, {t:24, s:'B', m:'金網安置'}
+            ];
+            let idx = 0;
+            currentIsA = false; // サークル用背景
+
+            const runNext = () => {
+                let step = seq[idx];
+                timeLeft = step.t;
+                safetyText = step.m;
+                
+                let warningPlayed = false;
+                timerId = setInterval(() => {
+                    timeLeft -= 0.016;
+                    if (timeLeft <= 5 && !warningPlayed) {
+                        playType(step.s);
+                        warningPlayed = true;
+                    }
+                    if (timeLeft <= 0) {
+                        clearInterval(timerId);
+                        idx = (idx + 1) % seq.length;
+                        runNext();
+                    }
+                    updateUI();
+                }, 16);
+            };
+            runNext();
+        }
+
+        function playType(type) {
+            if(type === 'A') audioA.play();
+            if(type === 'B') audioB.play();
+            if(type === 'C') audioC.play();
+        }
+
+        // 簡易タイマー実行関数（通常用）
+        function runTimer(nextDurationFn, isFirst) {
+            let warningPlayed = false;
+            timerId = setInterval(() => {
+                timeLeft -= 0.016;
+                if (timeLeft <= 5 && !warningPlayed) {
+                    currentIsA ? audioA.play() : audioB.play();
+                    warningPlayed = true;
+                }
+                if (timeLeft <= 0) {
+                    clearInterval(timerId);
+                    timeLeft = nextDurationFn();
+                    runTimer(nextDurationFn, false);
+                }
+                updateUI();
+            }, 16);
+        }
+    </script>
+</body>
+</html>
