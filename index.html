@@ -24,7 +24,6 @@
         }
         #timer-text {
             font-size: 140px; font-weight: 900; font-family: monospace;
-            /* 数字の色を水色系のグラデーションに変更 */
             background: linear-gradient(to bottom, #00fbff, #007fff);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             filter: drop-shadow(4px 4px 0px black); z-index: 10;
@@ -56,14 +55,14 @@
     </div>
 
     <div class="btn-row">
-        <button class="circle-btn" onclick="startCircleCalamityTimer()">サークルカラミティの<br>ふきだしが出たら押す</button>
-        <button class="grand-btn" onclick="startTimer(true, true)">グランドカラミティの<br>ふきだしが出たら押す</button>
+        <button class="circle-btn" onclick="handleCircleClick()">サークルカラミティの<br>ふきだしが出たら押す</button>
+        <button class="grand-btn" onclick="handleGrandClick()">グランドカラミティの<br>ふきだしが出たら押す</button>
     </div>
 
     <button class="stop-btn" onclick="resetAll()">STOP</button>
 
-    <button class="re-adjust red-btn" onclick="startTimer(false, false)">再調整（赤床が出たら押す）</button>
-    <button class="re-adjust yellow-btn" onclick="startTimer(true, false)">再調整（黄床が出たら押す）</button>
+    <button class="re-adjust red-btn" onclick="handleAdjustClick(false, false)">再調整（赤床が出たら押す）</button>
+    <button class="re-adjust yellow-btn" onclick="handleAdjustClick(true, false)">再調整（黄床が出たら押す）</button>
 
     <div class="test-row">
         <button class="test-btn" onclick="previewPattern('A')">Aテスト</button>
@@ -85,10 +84,31 @@
         const audioB = new Audio('b321.wav');
         const audioC = new Audio('c321.wav');
 
+        // 音声ロックを解除する強力な関数
         function unlockAudio() {
-            [audioAka, audioKiiro, audioA, audioB, audioC].forEach(a => {
-                a.play().then(() => { a.pause(); a.currentTime = 0; }).catch(() => {});
+            const audios = [audioAka, audioKiiro, audioA, audioB, audioC];
+            audios.forEach(a => {
+                a.muted = true; // 一旦ミュート
+                a.play().then(() => {
+                    a.pause();
+                    a.currentTime = 0;
+                    a.muted = false; // ミュート解除
+                }).catch(e => console.error("Audio unlock failed", e));
             });
+        }
+
+        // 各ボタンのクリックハンドラ（必ず最初にunlockAudioを呼ぶ）
+        function handleGrandClick() {
+            unlockAudio();
+            startTimer(true, true);
+        }
+        function handleCircleClick() {
+            unlockAudio();
+            startCircleCalamityTimer();
+        }
+        function handleAdjustClick(a, b) {
+            unlockAudio();
+            startTimer(a, b);
         }
 
         function createGridPattern() {
@@ -121,6 +141,7 @@
         function drawDynamicCircles() {
             const canvas = document.getElementById('layer-canvas');
             const ctx = canvas.getContext('2d');
+            if (!ctx) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             if (!isRunning || currentIsA) return;
@@ -131,17 +152,15 @@
             const yellowColor = "#FFEB3B";
             const safeGreen = "#E8F5E9";
 
-            // ベース
             ctx.beginPath();
             ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2);
             ctx.fillStyle = safeGreen;
             ctx.fill();
 
-            // 攻撃パターン
             if (currentSoundType === 'A') {
-                drawRange(ctx, centerX, centerY, maxRadius, 0, 15, yellowColor); // 内側
-                drawRange(ctx, centerX, centerY, maxRadius, 30, 50, yellowColor, true); // 金網
-                drawRange(ctx, centerX, centerY, maxRadius, 65, 80, yellowColor); // 外側(更新)
+                drawRange(ctx, centerX, centerY, maxRadius, 0, 15, yellowColor); 
+                drawRange(ctx, centerX, centerY, maxRadius, 30, 50, yellowColor, true); 
+                drawRange(ctx, centerX, centerY, maxRadius, 65, 80, yellowColor); 
             } else if (currentSoundType === 'B') {
                 drawRange(ctx, centerX, centerY, maxRadius, 20, 35, yellowColor); 
                 drawRange(ctx, centerX, centerY, maxRadius, 50, 65, yellowColor); 
@@ -151,14 +170,12 @@
                 drawRange(ctx, centerX, centerY, maxRadius, 90, 100, yellowColor); 
             }
 
-            // 常時ガイド
             ctx.beginPath();
             ctx.arc(centerX, centerY, maxRadius * 0.15, 0, Math.PI * 2);
             ctx.strokeStyle = "rgba(0,0,0,0.8)";
             ctx.lineWidth = 2;
             ctx.stroke();
 
-            // 金網ガイド (30-50%)
             drawRange(ctx, centerX, centerY, maxRadius, 30, 50, "rgba(0,0,0,0.05)", true);
 
             ctx.beginPath();
@@ -198,7 +215,7 @@
         }
 
         function startTimer(startWithA, isFirst) {
-            resetAll(); unlockAudio();
+            resetAll();
             isRunning = true; safetyText = ""; currentIsA = startWithA; currentSoundType = "G";
             let firstCycle = isFirst;
             const runCycle = () => {
@@ -221,7 +238,7 @@
         }
 
         function startCircleCalamityTimer() {
-            resetAll(); unlockAudio();
+            resetAll();
             isRunning = true; currentIsA = false; 
             const sequence = [
                 {t:21, s:'A', m:'線上安置'}, {t:24, s:'A', m:'線上安置'}, 
