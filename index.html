@@ -8,23 +8,21 @@
         body {
             margin: 0; font-family: sans-serif; background: white;
             display: flex; flex-direction: column; align-items: center;
-            height: 100vh; overflow-y: auto; touch-action: manipulation;
+            height: 100vh; overflow-x: hidden; overflow-y: auto; touch-action: manipulation;
         }
-        /* 安置情報テキスト（画面最上部） */
         #safety-text {
-            height: 50px; font-size: 32px; font-weight: 900; 
+            height: 45px; font-size: 32px; font-weight: 900; 
             margin-top: 10px; color: #444; text-align: center;
         }
-        /* カウントダウン表示エリア */
         #circle-area {
-            position: relative; width: 320px; height: 320px;
+            position: relative; width: 300px; height: 300px;
             display: flex; justify-content: center; align-items: center;
-            margin-top: 10px;
+            margin-top: 5px;
         }
         .yellow-circle {
             position: absolute; width: 220px; height: 220px;
             border-radius: 50%; border: 15px solid black;
-            outline: 60px solid #FFFFEB; z-index: -1;
+            outline: 45px solid #FFFFEB; z-index: -1;
         }
         .yellow-circle-inner {
             position: absolute; width: 140px; height: 140px;
@@ -36,20 +34,14 @@
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             filter: drop-shadow(4px 4px 0px black); z-index: 10;
         }
-        /* 背景ストライプ */
         .stripe-bg {
             background: repeating-linear-gradient(-45deg, #E57373, #E57373 70px, #66BB6A 70px, #66BB6A 140px) !important;
         }
-        /* ボタンエリア */
-        .btn-row { display: flex; width: 92%; gap: 10px; height: 160px; margin-top: 10px; }
+        .btn-row { display: flex; width: 92%; gap: 10px; height: 150px; margin-top: 15px; }
         button { border: 4px solid black; border-radius: 28px; font-weight: bold; cursor: pointer; }
-        
         .circle-btn { flex: 4; background: linear-gradient(#4A148C, #7B1FA2); color: white; font-size: 15px; }
         .grand-btn { flex: 6; background: linear-gradient(#0D47A1, #1976D2); color: white; font-size: 16px; }
-        
-        #stop-container { flex-grow: 1; display: flex; align-items: center; justify-content: center; }
-        .stop-btn { width: 160px; height: 65px; background: gray; color: white; font-size: 22px; }
-        
+        .stop-btn { width: 160px; height: 65px; background: gray; color: white; font-size: 22px; margin: 20px 0; }
         .re-adjust { width: 92%; height: 80px; margin-bottom: 8px; color: white; font-size: 18px; border-radius: 16px; }
         .red-btn { background: #E57373; }
         .yellow-btn { background: #FFEB3B; color: black; }
@@ -66,16 +58,14 @@
     </div>
 
     <div class="btn-row">
-        <button class="circle-btn" onclick="startCircleMode()">サークルカラミティの<br>ふきだしが出たら押す</button>
-        <button class="grand-btn" onclick="startGrandMode()">グランドカラミティの<br>ふきだしが出たら押す</button>
+        <button class="circle-btn" onclick="startCircleCalamityTimer()">サークルカラミティの<br>ふきだしが出たら押す</button>
+        <button class="grand-btn" onclick="startTimer(true, true)">グランドカラミティの<br>ふきだしが出たら押す</button>
     </div>
 
-    <div id="stop-container">
-        <button class="stop-btn" onclick="resetAll()">STOP</button>
-    </div>
+    <button class="stop-btn" onclick="resetAll()">STOP</button>
 
-    <button class="re-adjust red-btn" onclick="startNormalTimer(false, false)">再調整（赤床が出たら押す）</button>
-    <button class="re-adjust yellow-btn" onclick="startNormalTimer(true, false)">再調整（黄床が出たら押す）</button>
+    <button class="re-adjust red-btn" onclick="startTimer(false, false)">再調整（赤床が出たら押す）</button>
+    <button class="re-adjust yellow-btn" onclick="startTimer(true, false)">再調整（黄床が出たら押す）</button>
 
     <script>
         let timeLeft = 0;
@@ -84,16 +74,17 @@
         let currentIsA = true; 
         let safetyText = "";
 
-        // 音声定義 (.wav に変更)
+        // 音声定義
+        const audioAka = new Audio('aka321.wav');
+        const audioKiiro = new Audio('kiiro321.wav');
         const audioA = new Audio('a321.wav');
         const audioB = new Audio('b321.wav');
         const audioC = new Audio('c321.wav');
 
-        // iPhoneの音ロック解除
         function unlockAudio() {
-            audioA.load(); audioA.play(); audioA.pause(); audioA.currentTime = 0;
-            audioB.load(); audioB.play(); audioB.pause(); audioB.currentTime = 0;
-            audioC.load(); audioC.play(); audioC.pause(); audioC.currentTime = 0;
+            [audioAka, audioKiiro, audioA, audioB, audioC].forEach(a => {
+                a.play().then(() => { a.pause(); a.currentTime = 0; }).catch(() => {});
+            });
         }
 
         function updateUI() {
@@ -125,61 +116,58 @@
             updateUI();
         }
 
-        // グランドボタン（初回6秒 -> 次から23秒交互）
-        function startGrandMode() {
-            unlockAudio();
-            startNormalTimer(true, true);
-        }
-
-        function startNormalTimer(startWithA, isFirst) {
+        // --- 既存の startTimer (グランド・再調整) の完全再現 ---
+        function startTimer(startWithA, isFirst) {
             resetAll();
             unlockAudio();
             isRunning = true;
+            safetyText = ""; // 安置テキストは出さない
             currentIsA = startWithA;
-            let stepIsFirst = isFirst;
+            let firstCycle = isFirst;
 
-            const runStep = () => {
-                let duration = stepIsFirst ? 6 : 23;
-                stepIsFirst = false;
+            const runCycle = () => {
+                let duration = firstCycle ? 6 : 23;
+                firstCycle = false;
                 timeLeft = duration;
                 let warningPlayed = false;
 
                 timerId = setInterval(() => {
                     timeLeft -= 0.016;
                     if (timeLeft <= 5 && !warningPlayed) {
-                        currentIsA ? audioA.play() : audioB.play();
+                        // Android版同様、currentIsAによってakaかkiiroを再生
+                        currentIsA ? audioAka.play() : audioKiiro.play();
                         warningPlayed = true;
                     }
                     if (timeLeft <= 0) {
                         clearInterval(timerId);
                         currentIsA = !currentIsA;
-                        runStep();
+                        runCycle();
                     }
                     updateUI();
                 }, 16);
             };
-            runStep();
+            runCycle();
         }
 
-        // サークルボタン（固定シーケンス）
-        function startCircleMode() {
+        // --- 固定シーケンス (サークルカラミティ) ---
+        function startCircleCalamityTimer() {
             resetAll();
             unlockAudio();
             isRunning = true;
             currentIsA = false; 
 
             const sequence = [
-                {t:5, s:'A', m:'線上安置'}, {t:24, s:'A', m:'線上安置'}, 
+                {t:21, s:'A', m:'線上安置'}, {t:24, s:'A', m:'線上安置'}, 
                 {t:21, s:'B', m:'金網安置'}, {t:23, s:'A', m:'線上安置'}, 
                 {t:21, s:'C', m:'外周真ん中安置'}, {t:24, s:'B', m:'金網安置'}
             ];
             let idx = 0;
-            let veryFirst = true;
+            let isVeryFirst = true;
 
             const runCircleStep = () => {
                 let step = sequence[idx];
-                timeLeft = (veryFirst && idx === 0) ? 5 : step.t;
-                safetyText = step.m;
+                timeLeft = (isVeryFirst && idx === 0) ? 5 : step.t;
+                safetyText = step.m; // こちらは安置テキストを出す
                 let warningPlayed = false;
 
                 timerId = setInterval(() => {
@@ -193,7 +181,7 @@
                     if (timeLeft <= 0) {
                         clearInterval(timerId);
                         idx = (idx + 1) % sequence.length;
-                        if(idx === 0) veryFirst = false;
+                        if(idx === 0) isVeryFirst = false;
                         runCircleStep();
                     }
                     updateUI();
