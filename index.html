@@ -9,11 +9,25 @@
             margin: 0; font-family: sans-serif; background: white;
             display: flex; flex-direction: column; align-items: center;
             height: 100vh; overflow-x: hidden; overflow-y: auto; touch-action: manipulation;
+            position: relative;
         }
+        /* 左上のキャラアイコン（サイズを130pxに拡大） */
+        #kapa-icon {
+            position: absolute; 
+            top: 5px; 
+            left: 5px;
+            width: 130px; /* ここを大きくしました */
+            height: auto; 
+            object-fit: contain; 
+            z-index: 100;
+            pointer-events: none; /* 画像がボタン操作の邪魔をしないように設定 */
+        }
+        /* 安置情報テキスト */
         #safety-text {
             height: 45px; font-size: 32px; font-weight: 900; 
             margin-top: 10px; color: #444; text-align: center;
         }
+        /* カウントダウン表示エリア */
         #circle-area {
             position: relative; width: 320px; height: 320px;
             display: flex; justify-content: center; align-items: center;
@@ -32,20 +46,27 @@
         .stripe-bg {
             background: repeating-linear-gradient(-45deg, #E57373, #E57373 70px, #66BB6A 70px, #66BB6A 140px) !important;
         }
+        /* ボタンエリア */
         .btn-row { display: flex; width: 92%; gap: 10px; height: 150px; margin-top: 15px; }
         button { border: 4px solid black; border-radius: 28px; font-weight: bold; cursor: pointer; }
+        
         .circle-btn { flex: 4; background: linear-gradient(#4A148C, #7B1FA2); color: white; font-size: 15px; }
         .grand-btn { flex: 6; background: linear-gradient(#0D47A1, #1976D2); color: white; font-size: 16px; }
-        .stop-btn { width: 160px; height: 60px; background: gray; color: white; margin: 15px 0; font-size: 22px; }
-        .re-adjust { width: 92%; height: 70px; margin-bottom: 8px; color: white; font-size: 18px; border-radius: 16px; }
+        .stop-btn { width: 160px; height: 60px; background: gray; color: white; font-size: 22px; margin: 15px 0; }
+        
+        /* 音量調節エリア */
+        #volume-area { width: 80%; display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        #volume-slider { flex-grow: 1; cursor: pointer; height: 20px; }
+
+        .re-adjust { width: 92%; height: 75px; margin-bottom: 8px; color: white; font-size: 18px; border-radius: 16px; }
         .red-btn { background: #E57373; }
         .yellow-btn { background: #FFEB3B; color: black; }
-        
-        .test-row { display: flex; width: 92%; gap: 5px; margin-top: 20px; padding-bottom: 30px; }
-        .test-btn { flex: 1; height: 40px; font-size: 12px; border-radius: 10px; background: #f0f0f0; border: 2px solid #ccc; }
     </style>
 </head>
 <body>
+
+    <!-- キャラアイコン -->
+    <img id="kapa-icon" src="kapa.png" alt="kapa">
 
     <div id="safety-text"></div>
 
@@ -61,14 +82,14 @@
 
     <button class="stop-btn" onclick="resetAll()">STOP</button>
 
+    <!-- 音量調節バー -->
+    <div id="volume-area">
+        <span style="font-size: 14px; font-weight: bold;">音量</span>
+        <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="1" oninput="updateVolume(this.value)">
+    </div>
+
     <button class="re-adjust red-btn" onclick="handleAdjustClick(false, false)">再調整（赤床が出たら押す）</button>
     <button class="re-adjust yellow-btn" onclick="handleAdjustClick(true, false)">再調整（黄床が出たら押す）</button>
-
-    <div class="test-row">
-        <button class="test-btn" onclick="previewPattern('A')">Aテスト</button>
-        <button class="test-btn" onclick="previewPattern('B')">Bテスト</button>
-        <button class="test-btn" onclick="previewPattern('C')">Cテスト</button>
-    </div>
 
     <script>
         let timeLeft = 0;
@@ -78,38 +99,32 @@
         let safetyText = "";
         let currentSoundType = "G"; 
 
+        // 音声定義
         const audioAka = new Audio('aka321.wav');
         const audioKiiro = new Audio('kiiro321.wav');
         const audioA = new Audio('a321.wav');
         const audioB = new Audio('b321.wav');
         const audioC = new Audio('c321.wav');
+        const allAudios = [audioAka, audioKiiro, audioA, audioB, audioC];
 
-        // 音声ロックを解除する強力な関数
+        function updateVolume(val) {
+            allAudios.forEach(a => a.volume = val);
+        }
+
         function unlockAudio() {
-            const audios = [audioAka, audioKiiro, audioA, audioB, audioC];
-            audios.forEach(a => {
-                a.muted = true; // 一旦ミュート
+            allAudios.forEach(a => {
+                a.muted = true;
                 a.play().then(() => {
                     a.pause();
                     a.currentTime = 0;
-                    a.muted = false; // ミュート解除
-                }).catch(e => console.error("Audio unlock failed", e));
+                    a.muted = false;
+                }).catch(() => {});
             });
         }
 
-        // 各ボタンのクリックハンドラ（必ず最初にunlockAudioを呼ぶ）
-        function handleGrandClick() {
-            unlockAudio();
-            startTimer(true, true);
-        }
-        function handleCircleClick() {
-            unlockAudio();
-            startCircleCalamityTimer();
-        }
-        function handleAdjustClick(a, b) {
-            unlockAudio();
-            startTimer(a, b);
-        }
+        function handleGrandClick() { unlockAudio(); startTimer(true, true); }
+        function handleCircleClick() { unlockAudio(); startCircleCalamityTimer(); }
+        function handleAdjustClick(a, b) { unlockAudio(); startTimer(a, b); }
 
         function createGridPattern() {
             const pCanvas = document.createElement('canvas');
@@ -133,29 +148,24 @@
             ctx.fill();
             if (isGrid) {
                 const gridPattern = ctx.createPattern(createGridPattern(), 'repeat');
-                ctx.fillStyle = gridPattern;
-                ctx.fill();
+                ctx.fillStyle = gridPattern; ctx.fill();
             }
         }
 
         function drawDynamicCircles() {
             const canvas = document.getElementById('layer-canvas');
             const ctx = canvas.getContext('2d');
-            if (!ctx) return;
+            if(!ctx) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
             if (!isRunning || currentIsA) return;
-
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
             const maxRadius = 158;
             const yellowColor = "#FFEB3B";
             const safeGreen = "#E8F5E9";
 
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2);
-            ctx.fillStyle = safeGreen;
-            ctx.fill();
+            ctx.beginPath(); ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2);
+            ctx.fillStyle = safeGreen; ctx.fill();
 
             if (currentSoundType === 'A') {
                 drawRange(ctx, centerX, centerY, maxRadius, 0, 15, yellowColor); 
@@ -170,53 +180,27 @@
                 drawRange(ctx, centerX, centerY, maxRadius, 90, 100, yellowColor); 
             }
 
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, maxRadius * 0.15, 0, Math.PI * 2);
-            ctx.strokeStyle = "rgba(0,0,0,0.8)";
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
+            ctx.beginPath(); ctx.arc(centerX, centerY, maxRadius * 0.15, 0, Math.PI * 2);
+            ctx.strokeStyle = "rgba(0,0,0,0.8)"; ctx.lineWidth = 2; ctx.stroke();
             drawRange(ctx, centerX, centerY, maxRadius, 30, 50, "rgba(0,0,0,0.05)", true);
-
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2);
-            ctx.strokeStyle = "black";
-            ctx.lineWidth = 2;
-            ctx.stroke();
-        }
-
-        function previewPattern(type) {
-            resetAll();
-            isRunning = true;
-            currentIsA = false;
-            currentSoundType = type;
-            safetyText = type + "パターン確認中";
-            updateUI();
+            ctx.beginPath(); ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = "black"; ctx.lineWidth = 2; ctx.stroke();
         }
 
         function updateUI() {
-            const display = Math.ceil(timeLeft);
-            document.getElementById('timer-text').innerText = (isRunning && timeLeft > 0) ? display : "0";
+            document.getElementById('timer-text').innerText = (isRunning && timeLeft > 0) ? Math.ceil(timeLeft) : "0";
             document.getElementById('safety-text').innerText = safetyText;
-            
-            if (isRunning && currentIsA) {
-                document.body.classList.add("stripe-bg");
-            } else {
-                document.body.classList.remove("stripe-bg");
-            }
+            if (isRunning && currentIsA) { document.body.classList.add("stripe-bg"); } 
+            else { document.body.classList.remove("stripe-bg"); }
             drawDynamicCircles();
         }
 
         function resetAll() {
-            clearInterval(timerId);
-            isRunning = false; timeLeft = 0; safetyText = "";
-            currentSoundType = "G";
-            updateUI();
+            clearInterval(timerId); isRunning = false; timeLeft = 0; safetyText = ""; updateUI();
         }
 
         function startTimer(startWithA, isFirst) {
-            resetAll();
-            isRunning = true; safetyText = ""; currentIsA = startWithA; currentSoundType = "G";
+            resetAll(); isRunning = true; safetyText = ""; currentIsA = startWithA; currentSoundType = "G";
             let firstCycle = isFirst;
             const runCycle = () => {
                 let duration = firstCycle ? 6 : 23;
@@ -238,8 +222,7 @@
         }
 
         function startCircleCalamityTimer() {
-            resetAll();
-            isRunning = true; currentIsA = false; 
+            resetAll(); isRunning = true; currentIsA = false; 
             const sequence = [
                 {t:21, s:'A', m:'線上安置'}, {t:24, s:'A', m:'線上安置'}, 
                 {t:21, s:'B', m:'金網安置'}, {t:23, s:'A', m:'線上安置'}, 
