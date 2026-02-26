@@ -47,4 +47,160 @@
         .circle-btn { flex: 4; background: linear-gradient(#4A148C, #7B1FA2); color: white; font-size: 15px; }
         .grand-btn { flex: 6; background: linear-gradient(#0D47A1, #1976D2); color: white; font-size: 16px; }
         
-        #stop-container { flex-grow: 1; display: flex;
+        #stop-container { flex-grow: 1; display: flex; align-items: center; justify-content: center; }
+        .stop-btn { width: 160px; height: 65px; background: gray; color: white; font-size: 22px; }
+        
+        .re-adjust { width: 92%; height: 80px; margin-bottom: 8px; color: white; font-size: 18px; border-radius: 16px; }
+        .red-btn { background: #E57373; }
+        .yellow-btn { background: #FFEB3B; color: black; }
+    </style>
+</head>
+<body>
+
+    <div id="safety-text"></div>
+
+    <div id="circle-area">
+        <div id="circle-deco"></div>
+        <div id="circle-deco-inner"></div>
+        <div id="timer-text">0</div>
+    </div>
+
+    <div class="btn-row">
+        <button class="circle-btn" onclick="startCircleMode()">サークルカラミティの<br>ふきだしが出たら押す</button>
+        <button class="grand-btn" onclick="startGrandMode()">グランドカラミティの<br>ふきだしが出たら押す</button>
+    </div>
+
+    <div id="stop-container">
+        <button class="stop-btn" onclick="resetAll()">STOP</button>
+    </div>
+
+    <button class="re-adjust red-btn" onclick="startNormalTimer(false, false)">再調整（赤床が出たら押す）</button>
+    <button class="re-adjust yellow-btn" onclick="startNormalTimer(true, false)">再調整（黄床が出たら押す）</button>
+
+    <script>
+        let timeLeft = 0;
+        let timerId = null;
+        let isRunning = false;
+        let currentIsA = true; 
+        let safetyText = "";
+
+        // 音声定義 (.wav に変更)
+        const audioA = new Audio('a321.wav');
+        const audioB = new Audio('b321.wav');
+        const audioC = new Audio('c321.wav');
+
+        // iPhoneの音ロック解除
+        function unlockAudio() {
+            audioA.load(); audioA.play(); audioA.pause(); audioA.currentTime = 0;
+            audioB.load(); audioB.play(); audioB.pause(); audioB.currentTime = 0;
+            audioC.load(); audioC.play(); audioC.pause(); audioC.currentTime = 0;
+        }
+
+        function updateUI() {
+            const display = Math.ceil(timeLeft);
+            document.getElementById('timer-text').innerText = isRunning ? display : "0";
+            document.getElementById('safety-text').innerText = safetyText;
+            
+            const deco = document.getElementById('circle-deco');
+            const decoInner = document.getElementById('circle-deco-inner');
+            
+            if (isRunning && !currentIsA) {
+                document.body.classList.remove("stripe-bg");
+                deco.classList.add("yellow-circle");
+                decoInner.classList.add("yellow-circle-inner");
+            } else if (isRunning && currentIsA) {
+                document.body.classList.add("stripe-bg");
+                deco.classList.remove("yellow-circle");
+                decoInner.classList.remove("yellow-circle-inner");
+            } else {
+                document.body.classList.remove("stripe-bg");
+                deco.classList.remove("yellow-circle");
+                decoInner.classList.remove("yellow-circle-inner");
+            }
+        }
+
+        function resetAll() {
+            clearInterval(timerId);
+            isRunning = false; timeLeft = 0; safetyText = "";
+            updateUI();
+        }
+
+        // グランドボタン（初回6秒 -> 次から23秒交互）
+        function startGrandMode() {
+            unlockAudio();
+            startNormalTimer(true, true);
+        }
+
+        function startNormalTimer(startWithA, isFirst) {
+            resetAll();
+            unlockAudio();
+            isRunning = true;
+            currentIsA = startWithA;
+            let stepIsFirst = isFirst;
+
+            const runStep = () => {
+                let duration = stepIsFirst ? 6 : 23;
+                stepIsFirst = false;
+                timeLeft = duration;
+                let warningPlayed = false;
+
+                timerId = setInterval(() => {
+                    timeLeft -= 0.016;
+                    if (timeLeft <= 5 && !warningPlayed) {
+                        currentIsA ? audioA.play() : audioB.play();
+                        warningPlayed = true;
+                    }
+                    if (timeLeft <= 0) {
+                        clearInterval(timerId);
+                        currentIsA = !currentIsA;
+                        runStep();
+                    }
+                    updateUI();
+                }, 16);
+            };
+            runStep();
+        }
+
+        // サークルボタン（固定シーケンス）
+        function startCircleMode() {
+            resetAll();
+            unlockAudio();
+            isRunning = true;
+            currentIsA = false; 
+
+            const sequence = [
+                {t:5, s:'A', m:'線上安置'}, {t:24, s:'A', m:'線上安置'}, 
+                {t:21, s:'B', m:'金網安置'}, {t:23, s:'A', m:'線上安置'}, 
+                {t:21, s:'C', m:'外周真ん中安置'}, {t:24, s:'B', m:'金網安置'}
+            ];
+            let idx = 0;
+            let veryFirst = true;
+
+            const runCircleStep = () => {
+                let step = sequence[idx];
+                timeLeft = (veryFirst && idx === 0) ? 5 : step.t;
+                safetyText = step.m;
+                let warningPlayed = false;
+
+                timerId = setInterval(() => {
+                    timeLeft -= 0.016;
+                    if (timeLeft <= 5 && !warningPlayed) {
+                        if(step.s === 'A') audioA.play();
+                        if(step.s === 'B') audioB.play();
+                        if(step.s === 'C') audioC.play();
+                        warningPlayed = true;
+                    }
+                    if (timeLeft <= 0) {
+                        clearInterval(timerId);
+                        idx = (idx + 1) % sequence.length;
+                        if(idx === 0) veryFirst = false;
+                        runCircleStep();
+                    }
+                    updateUI();
+                }, 16);
+            };
+            runCircleStep();
+        }
+    </script>
+</body>
+</html>
