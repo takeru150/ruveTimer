@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ルベランタイマー Pro</title>
 
-    <!-- ブックマーク・ホーム画面用アイコンの設定 -->
+    <!-- アイコン設定 -->
     <link rel="icon" href="kapa.png">
     <link rel="apple-touch-icon" href="kapa.png">
 
@@ -21,14 +21,17 @@
             position: relative;
         }
 
-        /* 安置情報テキスト */
         #safety-text {
             height: 40px; font-size: 26px; font-weight: 900; 
             margin-top: 12px; color: #222; text-align: center;
             letter-spacing: 1px; text-shadow: 1px 1px 0px white;
         }
+        
+        #step-counter {
+            height: 20px; font-size: 14px; font-weight: bold; color: #888;
+            margin-bottom: 5px;
+        }
 
-        /* カウントダウン表示エリア */
         #circle-area {
             position: relative; width: 300px; height: 300px;
             display: flex; justify-content: center; align-items: center;
@@ -44,7 +47,6 @@
             z-index: 10; text-align: center; width: 100%; pointer-events: none;
         }
         
-        /* 拍動アニメーション */
         .pulse { animation: pulse-animation 0.5s infinite; }
         @keyframes pulse-animation {
             0% { transform: scale(1); }
@@ -64,45 +66,29 @@
         }
         button:active { transform: translateY(2px); box-shadow: 0 2px 0 #000; }
 
-        /* メインボタンエリア */
         .btn-row { display: flex; width: 94%; gap: 10px; height: 110px; margin-top: 15px; }
-        .circle-btn { 
-            flex: 1; background: linear-gradient(#6a1b9a, #4a148c); color: white; font-size: 14px; 
-            border-color: #311b92;
-        }
-        .grand-btn { 
-            flex: 1; background: linear-gradient(#1565c0, #0d47a1); color: white; font-size: 14px; 
-            border-color: #01579b;
-        }
+        .circle-btn { flex: 1; background: linear-gradient(#6a1b9a, #4a148c); color: white; font-size: 14px; }
+        .grand-btn { flex: 1; background: linear-gradient(#1565c0, #0d47a1); color: white; font-size: 14px; }
         
-        /* 微調整ボタンエリア */
         .adj-row { display: flex; width: 94%; gap: 10px; margin-top: 12px; }
-        .adj-btn { 
-            flex: 1; height: 60px; background: #fff; color: #444; font-size: 15px; 
-            border: 3px solid #ccc; box-shadow: 0 3px 0 #999;
-        }
+        .adj-btn { flex: 1; height: 70px; background: #fff; color: #444; font-size: 16px; border: 3px solid #ccc; box-shadow: 0 3px 0 #999; }
 
         .fixed-spacer { height: 25px; }
 
-        /* 再調整ボタン */
-        .re-adjust-row { width: 94%; }
-        .re-adjust { width: 100%; height: 60px; margin-bottom: 10px; color: white; font-size: 18px; }
-        .red-btn { background: linear-gradient(#ef5350, #c62828); border-color: #b71c1c; }
-        .yellow-btn { background: linear-gradient(#fdd835, #fbc02d); color: #333; border-color: #f9a825; }
+        .circle-forgot-btn {
+            width: 94%; height: 65px; margin-bottom: 12px;
+            background: linear-gradient(#ffa726, #fb8c00); color: white; font-size: 16px;
+            border-color: #ef6c00;
+        }
 
-        /* STOPボタン単体 */
-        .stop-panel {
-            display: flex; align-items: center; justify-content: center;
-            margin: 10px 0; width: 100%;
-        }
-        .stop-btn { 
-            width: 150px; height: 55px; background: linear-gradient(#9e9e9e, #616161); color: white; 
-            font-size: 20px; display: flex; align-items: center; justify-content: center; gap: 8px;
-            border-color: #424242;
-        }
-        .stop-icon { font-size: 24px; line-height: 0; margin-bottom: 4px; }
+        .re-adjust-row { width: 94%; }
+        .re-adjust { width: 100%; height: 60px; margin-bottom: 10px; color: white; font-size: 17px; }
+        .red-btn { background: linear-gradient(#ef5350, #c62828); }
+        .yellow-btn { background: linear-gradient(#fdd835, #fbc02d); color: #333; }
+
+        .stop-panel { display: flex; align-items: center; justify-content: center; margin: 10px 0; width: 100%; }
+        .stop-btn { width: 150px; height: 55px; background: linear-gradient(#9e9e9e, #616161); color: white; font-size: 20px; }
         
-        /* 音量スライダー */
         #volume-area { width: 85%; display: flex; align-items: center; gap: 15px; margin-top: 5px; }
         #volume-slider { flex-grow: 1; cursor: pointer; height: 10px; accent-color: #2196F3; }
 
@@ -112,6 +98,7 @@
 <body>
 
     <div id="safety-text"></div>
+    <div id="step-counter"></div>
 
     <div id="circle-area">
         <canvas id="layer-canvas" width="300" height="300"></canvas>
@@ -130,15 +117,16 @@
 
     <div class="fixed-spacer"></div>
 
+    <button class="circle-forgot-btn" onclick="handleCircleForgotClick()">サークルカラミティ押し忘れ用（黄床が出たら押す）</button>
+
     <div class="re-adjust-row">
-        <button class="re-adjust red-btn" onclick="handleAdjustClick(false, false)">再調整（赤床が出たら押す）</button>
-        <button class="re-adjust yellow-btn" onclick="handleAdjustClick(true, false)">再調整（黄床が出たら押す）</button>
+        <!-- ロジックを専用関数に変更 -->
+        <button class="re-adjust red-btn" onclick="handleGrandForgotClick(false)">グランドカラミティ押し忘れ用（赤床が出たら押す）</button>
+        <button class="re-adjust yellow-btn" onclick="handleGrandForgotClick(true)">グランドカラミティ押し忘れ用（黄床が出たら押す）</button>
     </div>
 
     <div class="stop-panel">
-        <button class="stop-btn" onclick="resetAll()">
-            <span class="stop-icon">■</span><span>STOP</span>
-        </button>
+        <button class="stop-btn" onclick="resetAll()">■ STOP</button>
     </div>
 
     <div id="volume-area">
@@ -191,6 +179,10 @@
         function handleGrandClick() { unlockAudio(); requestWakeLock(); startTimer(true, true); }
         function handleCircleClick() { unlockAudio(); requestWakeLock(); startCircleCalamityTimer(); }
         function handleAdjustClick(a, b) { unlockAudio(); requestWakeLock(); startTimer(a, b); }
+        function handleCircleForgotClick() { unlockAudio(); requestWakeLock(); startCircleForgotTimer(); }
+        
+        // 追加：グランド押し忘れ専用クリック
+        function handleGrandForgotClick(startWithA) { unlockAudio(); requestWakeLock(); startGrandForgotTimer(startWithA); }
 
         function createGridPattern() {
             const pCanvas = document.createElement('canvas');
@@ -221,10 +213,8 @@
             if (!isRunning || currentIsA) return;
             const centerX = canvas.width / 2; const centerY = canvas.height / 2;
             const maxRadius = 140; const yellowColor = "#FFEB3B"; const safeGreen = "#E8F5E9";
-
             ctx.beginPath(); ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2);
             ctx.fillStyle = safeGreen; ctx.fill();
-
             if (currentSoundType === 'A') {
                 drawRange(ctx, centerX, centerY, maxRadius, 0, 15, yellowColor); 
                 drawRange(ctx, centerX, centerY, maxRadius, 30, 50, yellowColor, true); 
@@ -237,7 +227,6 @@
                 drawRange(ctx, centerX, centerY, maxRadius, 35, 65, yellowColor); 
                 drawRange(ctx, centerX, centerY, maxRadius, 90, 100, yellowColor); 
             }
-
             ctx.beginPath(); ctx.arc(centerX, centerY, maxRadius * 0.15, 0, Math.PI * 2);
             ctx.strokeStyle = "rgba(0,0,0,0.6)"; ctx.lineWidth = 2; ctx.stroke();
             drawRange(ctx, centerX, centerY, maxRadius, 30, 50, "rgba(0,0,0,0.04)", true);
@@ -248,13 +237,8 @@
         function updateUI() {
             const timerEl = document.getElementById('timer-text');
             timerEl.innerText = (isRunning && timeLeft > 0) ? Math.ceil(timeLeft) : "0";
-            
-            if (isRunning && timeLeft > 0 && timeLeft <= 5) {
-                timerEl.classList.add('pulse');
-            } else {
-                timerEl.classList.remove('pulse');
-            }
-
+            if (isRunning && timeLeft > 0 && timeLeft <= 5) { timerEl.classList.add('pulse'); } 
+            else { timerEl.classList.remove('pulse'); }
             document.getElementById('safety-text').innerText = safetyText;
             if (isRunning && currentIsA) { document.body.classList.add("stripe-bg"); } 
             else { document.body.classList.remove("stripe-bg"); }
@@ -264,21 +248,43 @@
         function resetAll() {
             if (wakeLock !== null) { wakeLock.release().then(() => wakeLock = null); }
             clearInterval(timerId); isRunning = false; timeLeft = 0; safetyText = ""; 
+            document.getElementById('step-counter').innerText = "";
             allAudios.forEach(a => { a.pause(); a.currentTime = 0; });
             updateUI();
         }
 
+        // メイングランド用
         function startTimer(startWithA, isFirst) {
             resetAll(); isRunning = true; currentIsA = startWithA; currentSoundType = "G";
-            let firstCycle = isFirst;
+            let firstStep = isFirst; let seqIdx = 0;
+            const grandSeq = [22, 22, 21, 24, 23, 24, 23, 23, 23, 24, 23];
             const runCycle = () => {
-                let duration = firstCycle ? 6 : 23; firstCycle = false; timeLeft = duration;
+                let duration;
+                if (firstStep) { duration = 6; firstStep = false; document.getElementById('step-counter').innerText = "グランド: 1 / 12回目"; } 
+                else { duration = grandSeq[seqIdx]; document.getElementById('step-counter').innerText = "グランド: " + (seqIdx + 2) + " / 12回目"; seqIdx = (seqIdx + 1) % grandSeq.length; }
+                timeLeft = duration; let warningPlayed = false;
+                timerId = setInterval(() => {
+                    timeLeft -= 0.016;
+                    if (timeLeft <= 5 && !warningPlayed) { currentIsA ? audioAka.play() : audioKiiro.play(); warningPlayed = true; }
+                    if (timeLeft <= 0) { clearInterval(timerId); currentIsA = !currentIsA; runCycle(); }
+                    updateUI();
+                }, 16);
+            };
+            runCycle();
+        }
+
+        // 追加：グランド押し忘れ専用ロジック (20.5s -> 23s定時ループ)
+        function startGrandForgotTimer(startWithA) {
+            resetAll(); isRunning = true; currentIsA = startWithA; currentSoundType = "G";
+            let isFirstStep = true;
+            const runCycle = () => {
+                document.getElementById('step-counter').innerText = "グランド押し忘れ同期中";
+                timeLeft = isFirstStep ? 20.5 : 23; 
+                isFirstStep = false;
                 let warningPlayed = false;
                 timerId = setInterval(() => {
                     timeLeft -= 0.016;
-                    if (timeLeft <= 5 && !warningPlayed) {
-                        currentIsA ? audioAka.play() : audioKiiro.play(); warningPlayed = true;
-                    }
+                    if (timeLeft <= 5 && !warningPlayed) { currentIsA ? audioAka.play() : audioKiiro.play(); warningPlayed = true; }
                     if (timeLeft <= 0) { clearInterval(timerId); currentIsA = !currentIsA; runCycle(); }
                     updateUI();
                 }, 16);
@@ -289,32 +295,44 @@
         function startCircleCalamityTimer() {
             resetAll(); isRunning = true; currentIsA = false; 
             const sequence = [
-                {t:21, s:'A', m:'線上安置'}, {t:24, s:'A', m:'線上安置'}, 
-                {t:21, s:'B', m:'金網安置'}, {t:23, s:'A', m:'線上安置'}, 
-                {t:21, s:'C', m:'外周真ん中安置'}, {t:24, s:'B', m:'金網安置'}
+                {t:21, s:'A', m:'線上安置'}, {t:23.75, s:'A', m:'線上安置'}, {t:21, s:'B', m:'金網安置'},
+                {t:23, s:'A', m:'線上安置'}, {t:20.50, s:'C', m:'外周真ん中安置'}, {t:25.50, s:'B', m:'金網安置'}
             ];
-            let idx = 0; let isVeryFirst = true;
+            let idx = 0; let isFirstAction = true;
             const runCircleStep = () => {
-                let step = sequence[idx]; currentSoundType = step.s; timeLeft = (isVeryFirst && idx === 0) ? 5 : step.t; safetyText = step.m;
+                let step = sequence[idx]; currentSoundType = step.s; 
+                document.getElementById('step-counter').innerText = "サークル: " + (idx + 1) + " / 6回目";
+                timeLeft = (isFirstAction) ? 5 : step.t; safetyText = step.m;
                 let warningPlayed = false;
                 timerId = setInterval(() => {
                     timeLeft -= 0.016;
                     if (timeLeft <= 5 && !warningPlayed) {
-                        if(step.s === 'A') audioA.play();
-                        if(step.s === 'B') audioB.play();
-                        if(step.s === 'C') audioC.play();
+                        if(step.s === 'A') audioA.play(); if(step.s === 'B') audioB.play(); if(step.s === 'C') audioC.play();
                         warningPlayed = true;
                     }
-                    if (timeLeft <= 0) {
-                        clearInterval(timerId);
-                        idx = (idx + 1) % sequence.length;
-                        if(idx === 0) isVeryFirst = false;
-                        runCircleStep();
-                    }
+                    if (timeLeft <= 0) { clearInterval(timerId); isFirstAction = false; idx = (idx + 1) % sequence.length; runCircleStep(); }
                     updateUI();
                 }, 16);
             };
             runCircleStep();
+        }
+
+        function startCircleForgotTimer() {
+            resetAll(); isRunning = true; currentIsA = false; currentSoundType = "G";
+            let isFirstCycle = true;
+            const runCycle = () => {
+                document.getElementById('step-counter').innerText = "サークル押し忘れ同期中";
+                timeLeft = isFirstCycle ? 20 : 22.5; 
+                isFirstCycle = false;
+                let warningPlayed = false;
+                timerId = setInterval(() => {
+                    timeLeft -= 0.016;
+                    if (timeLeft <= 5 && !warningPlayed) { audioKiiro.play(); warningPlayed = true; }
+                    if (timeLeft <= 0) { clearInterval(timerId); runCycle(); }
+                    updateUI();
+                }, 16);
+            };
+            runCycle();
         }
     </script>
 </body>
