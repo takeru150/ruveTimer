@@ -42,19 +42,19 @@
         
         button { border: 4px solid black; border-radius: 28px; font-weight: bold; cursor: pointer; }
 
-        /* メインボタンエリア */
+        /* メインボタンエリア (横幅を等分に設定) */
         .btn-row { display: flex; width: 92%; gap: 10px; height: 140px; margin-top: 10px; }
-        .circle-btn { flex: 4; background: linear-gradient(#4A148C, #7B1FA2); color: white; font-size: 14px; }
-        .grand-btn { flex: 6; background: linear-gradient(#0D47A1, #1976D2); color: white; font-size: 15px; }
+        .circle-btn { flex: 1; background: linear-gradient(#4A148C, #7B1FA2); color: white; font-size: 14px; }
+        .grand-btn { flex: 1; background: linear-gradient(#0D47A1, #1976D2); color: white; font-size: 14px; }
         
-        /* 微調整ボタンエリア */
+        /* 微調整ボタンエリア (縦70px) */
         .adj-row { display: flex; width: 92%; gap: 10px; margin-top: 10px; }
-        .adj-btn { flex: 1; height: 50px; background: #eceff1; color: #37474f; font-size: 15px; border-radius: 16px; border: 3px solid #90a4ae; }
+        .adj-btn { flex: 1; height: 70px; background: #eceff1; color: #37474f; font-size: 16px; border-radius: 16px; border: 3px solid #90a4ae; }
 
         /* ほどよい隙間 */
         .fixed-spacer { height: 40px; }
 
-        /* 再調整ボタンエリア */
+        /* 再調整ボタンエリア (縦70px) */
         .re-adjust-row { width: 92%; }
         .re-adjust { width: 100%; height: 70px; margin-bottom: 8px; color: white; font-size: 18px; border-radius: 16px; }
         .red-btn { background: #E57373; }
@@ -105,7 +105,6 @@
         <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="1" oninput="updateVolume(this.value)">
     </div>
 
-    <!-- VOICEVOX クレジット -->
     <div id="credit">音声にはVOICEVOXを使用しています</div>
 
     <script>
