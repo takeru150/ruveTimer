@@ -36,14 +36,13 @@
             position: relative; width: 300px; height: 300px;
             display: flex; justify-content: center; align-items: center;
             margin-top: 5px;
-            filter: drop-shadow(0 0 8px rgba(0,0,0,0.1));
         }
         #layer-canvas { position: absolute; top: 0; left: 0; z-index: -1; }
         #timer-text {
             font-size: 130px; font-weight: 900; font-family: 'Courier New', Courier, monospace;
             background: linear-gradient(to bottom, #00fbff, #007fff);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5));
+            filter: drop-shadow(4px 4px 0px black);
             z-index: 10; text-align: center; width: 100%; pointer-events: none;
         }
         
@@ -66,27 +65,30 @@
         }
         button:active { transform: translateY(2px); box-shadow: 0 2px 0 #000; }
 
-        .btn-row { display: flex; width: 94%; gap: 10px; height: 110px; margin-top: 15px; }
-        .circle-btn { flex: 1; background: linear-gradient(#6a1b9a, #4a148c); color: white; font-size: 14px; }
-        .grand-btn { flex: 1; background: linear-gradient(#1565c0, #0d47a1); color: white; font-size: 14px; }
+        /* メイン2ボタン */
+        .btn-row { display: flex; width: 94%; gap: 10px; height: 130px; margin-top: 15px; }
+        .circle-btn { flex: 1; background: linear-gradient(#6a1b9a, #4a148c); color: white; font-size: 18px; }
+        .grand-btn { flex: 1; background: linear-gradient(#1565c0, #0d47a1); color: white; font-size: 18px; }
         
+        /* 微調整ボタン */
         .adj-row { display: flex; width: 94%; gap: 10px; margin-top: 12px; }
         .adj-btn { flex: 1; height: 70px; background: #fff; color: #444; font-size: 16px; border: 3px solid #ccc; box-shadow: 0 3px 0 #999; }
 
-        .fixed-spacer { height: 25px; }
+        .fixed-spacer { height: 15px; }
 
-        .circle-forgot-btn {
-            width: 94%; height: 65px; margin-bottom: 12px;
-            background: linear-gradient(#ffa726, #fb8c00); color: white; font-size: 16px;
-            border-color: #ef6c00;
+        /* 押し忘れ同期パネル */
+        .forgot-section {
+            width: 96%; background: rgba(0,0,0,0.05); border-radius: 25px; 
+            padding: 10px 0; display: flex; flex-direction: column; align-items: center;
         }
+        .forgot-header { font-size: 13px; font-weight: 900; color: #555; margin-bottom: 8px; }
+        .forgot-row { display: flex; width: 94%; gap: 8px; height: 70px; }
+        .forgot-btn { flex: 1; font-size: 12px; border-radius: 15px; box-shadow: 0 3px 0 #000; }
+        .c-f-btn { background: linear-gradient(#ffa726, #fb8c00); color: white; border-color: #ef6c00; }
+        .g-f-red { background: linear-gradient(#ef5350, #c62828); color: white; border-color: #b71c1c; }
+        .g-f-yellow { background: linear-gradient(#fdd835, #fbc02d); color: #333; border-color: #f9a825; }
 
-        .re-adjust-row { width: 94%; }
-        .re-adjust { width: 100%; height: 60px; margin-bottom: 10px; color: white; font-size: 17px; }
-        .red-btn { background: linear-gradient(#ef5350, #c62828); }
-        .yellow-btn { background: linear-gradient(#fdd835, #fbc02d); color: #333; }
-
-        .stop-panel { display: flex; align-items: center; justify-content: center; margin: 10px 0; width: 100%; }
+        .stop-panel { display: flex; align-items: center; justify-content: center; margin: 15px 0 10px 0; width: 100%; }
         .stop-btn { width: 150px; height: 55px; background: linear-gradient(#9e9e9e, #616161); color: white; font-size: 20px; }
         
         #volume-area { width: 85%; display: flex; align-items: center; gap: 15px; margin-top: 5px; }
@@ -106,8 +108,8 @@
     </div>
 
     <div class="btn-row">
-        <button class="circle-btn" onclick="handleCircleClick()">サークルカラミティの<br>ふきだしが出たら押す</button>
-        <button class="grand-btn" onclick="handleGrandClick()">グランドカラミティの<br>ふきだしが出たら押す</button>
+        <button class="circle-btn" onclick="handleCircleClick()">サークル<br>カラミティ</button>
+        <button class="grand-btn" onclick="handleGrandClick()">グランド<br>カラミティ</button>
     </div>
 
     <div class="adj-row">
@@ -117,11 +119,14 @@
 
     <div class="fixed-spacer"></div>
 
-    <button class="circle-forgot-btn" onclick="handleCircleForgotClick()">サークルカラミティ押し忘れ用（黄床が出たら押す）</button>
-
-    <div class="re-adjust-row">
-        <button class="re-adjust red-btn" onclick="handleGrandForgotClick(false)">グランドカラミティ押し忘れ用（赤床が出たら押す）</button>
-        <button class="re-adjust yellow-btn" onclick="handleGrandForgotClick(true)">グランドカラミティ押し忘れ用（黄床が出たら押す）</button>
+    <!-- 押し忘れ同期パネル -->
+    <div class="forgot-section">
+        <div class="forgot-header">⚠️ 押し忘れ時の同期 (ラグ調整込)</div>
+        <div class="forgot-row">
+            <button class="forgot-btn c-f-btn" onclick="handleCircleForgotClick()">サークル<br>(黄床後)</button>
+            <button class="forgot-btn g-f-red" onclick="handleGrandForgotClick(false)">グランド<br>(赤床後)</button>
+            <button class="forgot-btn g-f-yellow" onclick="handleGrandForgotClick(true)">グランド<br>(黄床後)</button>
+        </div>
     </div>
 
     <div class="stop-panel">
@@ -151,30 +156,18 @@
         const audioC = new Audio('c321.wav');
         const allAudios = [audioAka, audioKiiro, audioA, audioB, audioC];
 
-        // スリープ防止機能：どこかを触った瞬間に発動
         async function requestWakeLock() {
-            if (wakeLock !== null) return; // 既に取得済なら何もしない
+            if (wakeLock !== null) return;
             try {
                 if ('wakeLock' in navigator) {
                     wakeLock = await navigator.wakeLock.request('screen');
-                    console.log("スリープ防止有効");
-                    
-                    // 解除された時のイベントリスナー
-                    wakeLock.addEventListener('release', () => {
-                        console.log('スリープ防止解除');
-                        wakeLock = null;
-                    });
+                    wakeLock.addEventListener('release', () => { wakeLock = null; });
                 }
-            } catch (err) {
-                console.error("スリープ防止失敗:", err);
-            }
+            } catch (err) {}
         }
 
-        // ページが再度表示された時に再取得
         document.addEventListener('visibilitychange', async () => {
-            if (document.visibilityState === 'visible') {
-                await requestWakeLock();
-            }
+            if (document.visibilityState === 'visible') { await requestWakeLock(); }
         });
 
         function updateVolume(val) { allAudios.forEach(a => a.volume = val); }
@@ -228,7 +221,6 @@
             if (!isRunning || currentIsA) return;
             const centerX = canvas.width / 2; const centerY = canvas.height / 2;
             const maxRadius = 140; const yellowColor = "#FFEB3B"; const safeGreen = "#E8F5E9";
-
             ctx.beginPath(); ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2);
             ctx.fillStyle = safeGreen; ctx.fill();
 
@@ -266,7 +258,6 @@
             clearInterval(timerId); isRunning = false; timeLeft = 0; safetyText = ""; 
             document.getElementById('step-counter').innerText = "";
             allAudios.forEach(a => { a.pause(); a.currentTime = 0; });
-            // STOPボタンではスリープ防止をあえて解除しない（使い勝手優先）
             updateUI();
         }
 
@@ -293,7 +284,7 @@
             resetAll(); isRunning = true; currentIsA = startWithA; currentSoundType = "G";
             let isFirstStep = true;
             const runCycle = () => {
-                document.getElementById('step-counter').innerText = "グランド押し忘れ同期中";
+                document.getElementById('step-counter').innerText = "グランド同期中";
                 timeLeft = isFirstStep ? 20.5 : 23; isFirstStep = false;
                 let warningPlayed = false;
                 timerId = setInterval(() => {
@@ -335,7 +326,7 @@
             resetAll(); isRunning = true; currentIsA = false; currentSoundType = "G";
             let isFirstCycle = true;
             const runCycle = () => {
-                document.getElementById('step-counter').innerText = "サークル押し忘れ同期中";
+                document.getElementById('step-counter').innerText = "サークル同期中";
                 timeLeft = isFirstCycle ? 20 : 22.5; isFirstCycle = false;
                 let warningPlayed = false;
                 timerId = setInterval(() => {
