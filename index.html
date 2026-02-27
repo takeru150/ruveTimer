@@ -9,19 +9,14 @@
             margin: 0; font-family: sans-serif; background: white;
             display: flex; flex-direction: column; align-items: center;
             height: 100vh; overflow-x: hidden; overflow-y: auto; touch-action: manipulation;
-            position: relative;
         }
-        /* 左上のキャラアイコン */
-        #kapa-icon {
-            position: absolute; top: 5px; left: 5px;
-            width: 60px; height: auto; object-fit: contain; z-index: 100;
-            pointer-events: none; 
-        }
+
         /* 安置情報テキスト */
         #safety-text {
             height: 45px; font-size: 32px; font-weight: 900; 
             margin-top: 10px; color: #444; text-align: center;
         }
+
         /* カウントダウン表示エリア */
         #circle-area {
             position: relative; width: 320px; height: 320px;
@@ -42,38 +37,47 @@
         
         button { border: 4px solid black; border-radius: 28px; font-weight: bold; cursor: pointer; }
 
-        /* メインボタンエリア (横幅を等分に設定) */
+        /* メインボタンエリア */
         .btn-row { display: flex; width: 92%; gap: 10px; height: 140px; margin-top: 10px; }
         .circle-btn { flex: 1; background: linear-gradient(#4A148C, #7B1FA2); color: white; font-size: 14px; }
         .grand-btn { flex: 1; background: linear-gradient(#0D47A1, #1976D2); color: white; font-size: 14px; }
         
-        /* 微調整ボタンエリア (縦70px) */
+        /* 微調整ボタンエリア */
         .adj-row { display: flex; width: 92%; gap: 10px; margin-top: 10px; }
         .adj-btn { flex: 1; height: 70px; background: #eceff1; color: #37474f; font-size: 16px; border-radius: 16px; border: 3px solid #90a4ae; }
 
-        /* ほどよい隙間 */
         .fixed-spacer { height: 40px; }
 
-        /* 再調整ボタンエリア (縦70px) */
+        /* 再調整ボタンエリア */
         .re-adjust-row { width: 92%; }
         .re-adjust { width: 100%; height: 70px; margin-bottom: 8px; color: white; font-size: 18px; border-radius: 16px; }
         .red-btn { background: #E57373; }
         .yellow-btn { background: #FFEB3B; color: black; }
 
-        /* STOPボタン */
-        .stop-btn { width: 160px; height: 60px; background: gray; color: white; font-size: 22px; margin: 15px 0; }
+        /* STOPボタン＋左右画像のコンテナ */
+        .stop-container {
+            display: flex; align-items: center; justify-content: center; gap: 10px; margin: 15px 0;
+        }
+        .kapa-img {
+            width: 55px; height: auto; object-fit: contain; pointer-events: none;
+        }
+        .stop-btn { 
+            width: 160px; height: 60px; background: gray; color: white; 
+            font-size: 22px;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .stop-icon { font-size: 26px; line-height: 0; margin-bottom: 4px; }
         
         /* 音量調節エリア */
         #volume-area { width: 85%; display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
         #volume-slider { flex-grow: 1; cursor: pointer; height: 25px; }
 
-        /* クレジット表記 */
+        /* クレジット */
         #credit { font-size: 10px; color: #888; padding-bottom: 20px; text-align: center; }
     </style>
 </head>
 <body>
 
-    <img id="kapa-icon" src="kapa.png" alt="kapa">
     <div id="safety-text"></div>
 
     <div id="circle-area">
@@ -87,8 +91,8 @@
     </div>
 
     <div class="adj-row">
-        <button class="adj-btn" onclick="adjustTime(1)">1秒遅める</button>
-        <button class="adj-btn" onclick="adjustTime(-1)">1秒早める</button>
+        <button class="adj-btn" onclick="adjustTime(1)">≪ 1秒遅める</button>
+        <button class="adj-btn" onclick="adjustTime(-1)">1秒早める ≫</button>
     </div>
 
     <div class="fixed-spacer"></div>
@@ -98,7 +102,14 @@
         <button class="re-adjust yellow-btn" onclick="handleAdjustClick(true, false)">再調整（黄床が出たら押す）</button>
     </div>
 
-    <button class="stop-btn" onclick="resetAll()">STOP</button>
+    <!-- STOPボタンを左右の画像で挟む -->
+    <div class="stop-container">
+        <img class="kapa-img" src="kapa.png" alt="kapa">
+        <button class="stop-btn" onclick="resetAll()">
+            <span class="stop-icon">■</span><span>STOP</span>
+        </button>
+        <img class="kapa-img" src="kapa.png" alt="kapa">
+    </div>
 
     <div id="volume-area">
         <span style="font-size: 14px; font-weight: bold; color: #666;">音量</span>
@@ -211,7 +222,18 @@
 
         function resetAll() {
             if (wakeLock !== null) { wakeLock.release().then(() => wakeLock = null); }
-            clearInterval(timerId); isRunning = false; timeLeft = 0; safetyText = ""; updateUI();
+            clearInterval(timerId); 
+            isRunning = false; 
+            timeLeft = 0; 
+            safetyText = ""; 
+            
+            // 全音声を即座に停止して頭出し
+            allAudios.forEach(a => {
+                a.pause();
+                a.currentTime = 0;
+            });
+
+            updateUI();
         }
 
         function startTimer(startWithA, isFirst) {
