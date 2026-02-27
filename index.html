@@ -39,21 +39,36 @@
         .stripe-bg {
             background: repeating-linear-gradient(-45deg, #E57373, #E57373 70px, #66BB6A 70px, #66BB6A 140px) !important;
         }
-        /* ボタンエリア */
-        .btn-row { display: flex; width: 92%; gap: 10px; height: 150px; margin-top: 15px; }
-        button { border: 4px solid black; border-radius: 28px; font-weight: bold; cursor: pointer; }
         
-        .circle-btn { flex: 4; background: linear-gradient(#4A148C, #7B1FA2); color: white; font-size: 15px; }
-        .grand-btn { flex: 6; background: linear-gradient(#0D47A1, #1976D2); color: white; font-size: 16px; }
+        button { border: 4px solid black; border-radius: 28px; font-weight: bold; cursor: pointer; }
+
+        /* メインボタンエリア */
+        .btn-row { display: flex; width: 92%; gap: 10px; height: 140px; margin-top: 10px; }
+        .circle-btn { flex: 4; background: linear-gradient(#4A148C, #7B1FA2); color: white; font-size: 14px; }
+        .grand-btn { flex: 6; background: linear-gradient(#0D47A1, #1976D2); color: white; font-size: 15px; }
+        
+        /* 微調整ボタンエリア */
+        .adj-row { display: flex; width: 92%; gap: 10px; margin-top: 10px; }
+        .adj-btn { flex: 1; height: 50px; background: #eceff1; color: #37474f; font-size: 15px; border-radius: 16px; border: 3px solid #90a4ae; }
+
+        /* ほどよい隙間 */
+        .fixed-spacer { height: 40px; }
+
+        /* 再調整ボタンエリア */
+        .re-adjust-row { width: 92%; }
+        .re-adjust { width: 100%; height: 70px; margin-bottom: 8px; color: white; font-size: 18px; border-radius: 16px; }
+        .red-btn { background: #E57373; }
+        .yellow-btn { background: #FFEB3B; color: black; }
+
+        /* STOPボタン */
         .stop-btn { width: 160px; height: 60px; background: gray; color: white; font-size: 22px; margin: 15px 0; }
         
         /* 音量調節エリア */
-        #volume-area { width: 80%; display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
-        #volume-slider { flex-grow: 1; cursor: pointer; height: 20px; }
+        #volume-area { width: 85%; display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+        #volume-slider { flex-grow: 1; cursor: pointer; height: 25px; }
 
-        .re-adjust { width: 92%; height: 75px; margin-bottom: 8px; color: white; font-size: 18px; border-radius: 16px; }
-        .red-btn { background: #E57373; }
-        .yellow-btn { background: #FFEB3B; color: black; }
+        /* クレジット表記 */
+        #credit { font-size: 10px; color: #888; padding-bottom: 20px; text-align: center; }
     </style>
 </head>
 <body>
@@ -71,15 +86,27 @@
         <button class="grand-btn" onclick="handleGrandClick()">グランドカラミティの<br>ふきだしが出たら押す</button>
     </div>
 
+    <div class="adj-row">
+        <button class="adj-btn" onclick="adjustTime(1)">1秒遅める</button>
+        <button class="adj-btn" onclick="adjustTime(-1)">1秒早める</button>
+    </div>
+
+    <div class="fixed-spacer"></div>
+
+    <div class="re-adjust-row">
+        <button class="re-adjust red-btn" onclick="handleAdjustClick(false, false)">再調整（赤床が出たら押す）</button>
+        <button class="re-adjust yellow-btn" onclick="handleAdjustClick(true, false)">再調整（黄床が出たら押す）</button>
+    </div>
+
     <button class="stop-btn" onclick="resetAll()">STOP</button>
 
     <div id="volume-area">
-        <span style="font-size: 14px; font-weight: bold;">音量</span>
+        <span style="font-size: 14px; font-weight: bold; color: #666;">音量</span>
         <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="1" oninput="updateVolume(this.value)">
     </div>
 
-    <button class="re-adjust red-btn" onclick="handleAdjustClick(false, false)">再調整（赤床が出たら押す）</button>
-    <button class="re-adjust yellow-btn" onclick="handleAdjustClick(true, false)">再調整（黄床が出たら押す）</button>
+    <!-- VOICEVOX クレジット -->
+    <div id="credit">音声にはVOICEVOXを使用しています</div>
 
     <script>
         let timeLeft = 0;
@@ -88,7 +115,7 @@
         let currentIsA = true; 
         let safetyText = "";
         let currentSoundType = "G"; 
-        let wakeLock = null; // スリープ防止用
+        let wakeLock = null;
 
         const audioAka = new Audio('aka321.wav');
         const audioKiiro = new Audio('kiiro321.wav');
@@ -97,38 +124,33 @@
         const audioC = new Audio('c321.wav');
         const allAudios = [audioAka, audioKiiro, audioA, audioB, audioC];
 
-        // --- スリープ防止機能 ---
         async function requestWakeLock() {
-            try {
-                if ('wakeLock' in navigator) {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                    console.log("スリープ防止：有効");
-                }
-            } catch (err) {
-                console.error("スリープ防止失敗:", err);
-            }
+            try { if ('wakeLock' in navigator) { wakeLock = await navigator.wakeLock.request('screen'); } } catch (err) {}
         }
 
-        // タブが戻ってきた時にスリープ防止を再開
         document.addEventListener('visibilitychange', async () => {
-            if (wakeLock !== null && document.visibilityState === 'visible') {
-                await requestWakeLock();
-            }
+            if (wakeLock !== null && document.visibilityState === 'visible') { await requestWakeLock(); }
         });
 
         function updateVolume(val) { allAudios.forEach(a => a.volume = val); }
 
         function unlockAudio() {
-            requestWakeLock(); // ボタンを押した瞬間にスリープ防止
             allAudios.forEach(a => {
                 a.muted = true;
                 a.play().then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(() => {});
             });
         }
 
-        function handleGrandClick() { unlockAudio(); startTimer(true, true); }
-        function handleCircleClick() { unlockAudio(); startCircleCalamityTimer(); }
-        function handleAdjustClick(a, b) { unlockAudio(); startTimer(a, b); }
+        function adjustTime(amount) {
+            if (!isRunning) return;
+            timeLeft += amount;
+            if (timeLeft < 0) timeLeft = 0;
+            updateUI();
+        }
+
+        function handleGrandClick() { unlockAudio(); requestWakeLock(); startTimer(true, true); }
+        function handleCircleClick() { unlockAudio(); requestWakeLock(); startCircleCalamityTimer(); }
+        function handleAdjustClick(a, b) { unlockAudio(); requestWakeLock(); startTimer(a, b); }
 
         function createGridPattern() {
             const pCanvas = document.createElement('canvas');
@@ -158,7 +180,7 @@
             if(!ctx) return; ctx.clearRect(0, 0, canvas.width, canvas.height);
             if (!isRunning || currentIsA) return;
             const centerX = canvas.width / 2; const centerY = canvas.height / 2;
-            const maxRadius = 158; const yellowColor = "#FFEB3B"; const safeGreen = "#E8F5E9";
+            const maxRadius = 148; const yellowColor = "#FFEB3B"; const safeGreen = "#E8F5E9";
             ctx.beginPath(); ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2);
             ctx.fillStyle = safeGreen; ctx.fill();
             if (currentSoundType === 'A') {
@@ -231,7 +253,10 @@
                         warningPlayed = true;
                     }
                     if (timeLeft <= 0) {
-                        clearInterval(timerId); idx = (idx + 1) % sequence.length; if(idx === 0) isVeryFirst = false; runCircleStep();
+                        clearInterval(timerId);
+                        idx = (idx + 1) % sequence.length;
+                        if(idx === 0) isVeryFirst = false;
+                        runCircleStep();
                     }
                     updateUI();
                 }, 16);
