@@ -95,7 +95,7 @@
         #credit { font-size: 10px; color: #aaa; padding: 15px 0; text-align: center; }
     </style>
 </head>
-<body>
+<body onclick="requestWakeLock()" ontouchstart="requestWakeLock()">
 
     <div id="safety-text"></div>
     <div id="step-counter"></div>
@@ -120,7 +120,6 @@
     <button class="circle-forgot-btn" onclick="handleCircleForgotClick()">サークルカラミティ押し忘れ用（黄床が出たら押す）</button>
 
     <div class="re-adjust-row">
-        <!-- ロジックを専用関数に変更 -->
         <button class="re-adjust red-btn" onclick="handleGrandForgotClick(false)">グランドカラミティ押し忘れ用（赤床が出たら押す）</button>
         <button class="re-adjust yellow-btn" onclick="handleGrandForgotClick(true)">グランドカラミティ押し忘れ用（黄床が出たら押す）</button>
     </div>
@@ -152,12 +151,30 @@
         const audioC = new Audio('c321.wav');
         const allAudios = [audioAka, audioKiiro, audioA, audioB, audioC];
 
+        // スリープ防止機能：どこかを触った瞬間に発動
         async function requestWakeLock() {
-            try { if ('wakeLock' in navigator) { wakeLock = await navigator.wakeLock.request('screen'); } } catch (err) {}
+            if (wakeLock !== null) return; // 既に取得済なら何もしない
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log("スリープ防止有効");
+                    
+                    // 解除された時のイベントリスナー
+                    wakeLock.addEventListener('release', () => {
+                        console.log('スリープ防止解除');
+                        wakeLock = null;
+                    });
+                }
+            } catch (err) {
+                console.error("スリープ防止失敗:", err);
+            }
         }
 
+        // ページが再度表示された時に再取得
         document.addEventListener('visibilitychange', async () => {
-            if (wakeLock !== null && document.visibilityState === 'visible') { await requestWakeLock(); }
+            if (document.visibilityState === 'visible') {
+                await requestWakeLock();
+            }
         });
 
         function updateVolume(val) { allAudios.forEach(a => a.volume = val); }
@@ -176,13 +193,11 @@
             updateUI();
         }
 
-        function handleGrandClick() { unlockAudio(); requestWakeLock(); startTimer(true, true); }
-        function handleCircleClick() { unlockAudio(); requestWakeLock(); startCircleCalamityTimer(); }
-        function handleAdjustClick(a, b) { unlockAudio(); requestWakeLock(); startTimer(a, b); }
-        function handleCircleForgotClick() { unlockAudio(); requestWakeLock(); startCircleForgotTimer(); }
-        
-        // 追加：グランド押し忘れ専用クリック
-        function handleGrandForgotClick(startWithA) { unlockAudio(); requestWakeLock(); startGrandForgotTimer(startWithA); }
+        function handleGrandClick() { unlockAudio(); startTimer(true, true); }
+        function handleCircleClick() { unlockAudio(); startCircleCalamityTimer(); }
+        function handleAdjustClick(a, b) { unlockAudio(); startTimer(a, b); }
+        function handleCircleForgotClick() { unlockAudio(); startCircleForgotTimer(); }
+        function handleGrandForgotClick(startWithA) { unlockAudio(); startGrandForgotTimer(startWithA); }
 
         function createGridPattern() {
             const pCanvas = document.createElement('canvas');
@@ -213,8 +228,10 @@
             if (!isRunning || currentIsA) return;
             const centerX = canvas.width / 2; const centerY = canvas.height / 2;
             const maxRadius = 140; const yellowColor = "#FFEB3B"; const safeGreen = "#E8F5E9";
+
             ctx.beginPath(); ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2);
             ctx.fillStyle = safeGreen; ctx.fill();
+
             if (currentSoundType === 'A') {
                 drawRange(ctx, centerX, centerY, maxRadius, 0, 15, yellowColor); 
                 drawRange(ctx, centerX, centerY, maxRadius, 30, 50, yellowColor, true); 
@@ -246,14 +263,13 @@
         }
 
         function resetAll() {
-            if (wakeLock !== null) { wakeLock.release().then(() => wakeLock = null); }
             clearInterval(timerId); isRunning = false; timeLeft = 0; safetyText = ""; 
             document.getElementById('step-counter').innerText = "";
             allAudios.forEach(a => { a.pause(); a.currentTime = 0; });
+            // STOPボタンではスリープ防止をあえて解除しない（使い勝手優先）
             updateUI();
         }
 
-        // メイングランド用
         function startTimer(startWithA, isFirst) {
             resetAll(); isRunning = true; currentIsA = startWithA; currentSoundType = "G";
             let firstStep = isFirst; let seqIdx = 0;
@@ -273,14 +289,12 @@
             runCycle();
         }
 
-        // 追加：グランド押し忘れ専用ロジック (20.5s -> 23s定時ループ)
         function startGrandForgotTimer(startWithA) {
             resetAll(); isRunning = true; currentIsA = startWithA; currentSoundType = "G";
             let isFirstStep = true;
             const runCycle = () => {
                 document.getElementById('step-counter').innerText = "グランド押し忘れ同期中";
-                timeLeft = isFirstStep ? 20.5 : 23; 
-                isFirstStep = false;
+                timeLeft = isFirstStep ? 20.5 : 23; isFirstStep = false;
                 let warningPlayed = false;
                 timerId = setInterval(() => {
                     timeLeft -= 0.016;
@@ -322,8 +336,7 @@
             let isFirstCycle = true;
             const runCycle = () => {
                 document.getElementById('step-counter').innerText = "サークル押し忘れ同期中";
-                timeLeft = isFirstCycle ? 20 : 22.5; 
-                isFirstCycle = false;
+                timeLeft = isFirstCycle ? 20 : 22.5; isFirstCycle = false;
                 let warningPlayed = false;
                 timerId = setInterval(() => {
                     timeLeft -= 0.016;
