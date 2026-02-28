@@ -65,25 +65,22 @@
         }
         button:active { transform: translateY(2px); box-shadow: 0 2px 0 #000; }
 
-        /* メイン2ボタン */
-        .btn-row { display: flex; width: 94%; gap: 10px; height: 130px; margin-top: 15px; }
-        .circle-btn { flex: 1; background: linear-gradient(#6a1b9a, #4a148c); color: white; font-size: 18px; }
-        .grand-btn { flex: 1; background: linear-gradient(#1565c0, #0d47a1); color: white; font-size: 18px; }
+        .btn-row { display: flex; width: 94%; gap: 10px; height: 110px; margin-top: 15px; }
+        .circle-btn { flex: 1; background: linear-gradient(#6a1b9a, #4a148c); color: white; font-size: 14px; }
+        .grand-btn { flex: 1; background: linear-gradient(#1565c0, #0d47a1); color: white; font-size: 14px; }
         
-        /* 微調整ボタン */
         .adj-row { display: flex; width: 94%; gap: 10px; margin-top: 12px; }
         .adj-btn { flex: 1; height: 70px; background: #fff; color: #444; font-size: 16px; border: 3px solid #ccc; box-shadow: 0 3px 0 #999; }
 
-        .fixed-spacer { height: 15px; }
+        .fixed-spacer { height: 25px; }
 
-        /* 押し忘れ同期パネル */
         .forgot-section {
             width: 96%; background: rgba(0,0,0,0.05); border-radius: 25px; 
             padding: 10px 0; display: flex; flex-direction: column; align-items: center;
         }
         .forgot-header { font-size: 13px; font-weight: 900; color: #555; margin-bottom: 8px; }
         .forgot-row { display: flex; width: 94%; gap: 8px; height: 70px; }
-        .forgot-btn { flex: 1; font-size: 12px; border-radius: 15px; box-shadow: 0 3px 0 #000; }
+        .forgot-btn { flex: 1; font-size: 11px; border-radius: 15px; box-shadow: 0 3px 0 #000; }
         .c-f-btn { background: linear-gradient(#ffa726, #fb8c00); color: white; border-color: #ef6c00; }
         .g-f-red { background: linear-gradient(#ef5350, #c62828); color: white; border-color: #b71c1c; }
         .g-f-yellow { background: linear-gradient(#fdd835, #fbc02d); color: #333; border-color: #f9a825; }
@@ -108,8 +105,8 @@
     </div>
 
     <div class="btn-row">
-        <button class="circle-btn" onclick="handleCircleClick()">サークル<br>カラミティ</button>
-        <button class="grand-btn" onclick="handleGrandClick()">グランド<br>カラミティ</button>
+        <button class="circle-btn" onclick="handleCircleClick()">サークルカラミティの<br>ふきだしが出たら押す</button>
+        <button class="grand-btn" onclick="handleGrandClick()">グランドカラミティの<br>ふきだしが出たら押す</button>
     </div>
 
     <div class="adj-row">
@@ -119,13 +116,13 @@
 
     <div class="fixed-spacer"></div>
 
-    <!-- 押し忘れ同期パネル -->
+    <!-- 押し忘れ同期パネル (名称からカラミティを削除) -->
     <div class="forgot-section">
-        <div class="forgot-header">⚠️ 押し忘れ時の同期 (ラグ調整込)</div>
+        <div class="forgot-header">⚠️ 押し忘れた時用のボタン</div>
         <div class="forgot-row">
-            <button class="forgot-btn c-f-btn" onclick="handleCircleForgotClick()">サークル<br>(黄床後)</button>
-            <button class="forgot-btn g-f-red" onclick="handleGrandForgotClick(false)">グランド<br>(赤床後)</button>
-            <button class="forgot-btn g-f-yellow" onclick="handleGrandForgotClick(true)">グランド<br>(黄床後)</button>
+            <button class="forgot-btn c-f-btn" onclick="handleCircleForgotClick()">サークル<br>(黄床で押す)</button>
+            <button class="forgot-btn g-f-red" onclick="handleGrandForgotClick(false)">グランド<br>(赤床で押す)</button>
+            <button class="forgot-btn g-f-yellow" onclick="handleGrandForgotClick(true)">グランド<br>(黄床で押す)</button>
         </div>
     </div>
 
@@ -255,16 +252,19 @@
         }
 
         function resetAll() {
+            if (wakeLock !== null) { wakeLock.release().then(() => wakeLock = null); }
             clearInterval(timerId); isRunning = false; timeLeft = 0; safetyText = ""; 
             document.getElementById('step-counter').innerText = "";
             allAudios.forEach(a => { a.pause(); a.currentTime = 0; });
             updateUI();
         }
 
+        // --- グランド用ロジック (新秒数反映済) ---
         function startTimer(startWithA, isFirst) {
             resetAll(); isRunning = true; currentIsA = startWithA; currentSoundType = "G";
             let firstStep = isFirst; let seqIdx = 0;
-            const grandSeq = [22, 22, 21, 24, 23, 24, 23, 23, 23, 24, 23];
+            // 新シーケンス反映
+            const grandSeq = [22.25, 24, 22.75, 24, 22.5, 23.25, 23.5, 23.5, 23.25, 24, 22.5];
             const runCycle = () => {
                 let duration;
                 if (firstStep) { duration = 6; firstStep = false; document.getElementById('step-counter').innerText = "グランド: 1 / 12回目"; } 
