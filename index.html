@@ -32,19 +32,34 @@
             margin-bottom: 5px;
         }
 
+        /* タイマーと微調整ボタンを横に並べるコンテナ */
+        .timer-container {
+            display: flex; align-items: center; justify-content: center; 
+            width: 100%; gap: 5px; margin-top: 5px;
+        }
+
         #circle-area {
-            position: relative; width: 300px; height: 300px;
+            position: relative; width: 260px; height: 260px; /* 少しサイズ調整 */
             display: flex; justify-content: center; align-items: center;
-            margin-top: 5px;
         }
         #layer-canvas { position: absolute; top: 0; left: 0; z-index: -1; }
         #timer-text {
-            font-size: 130px; font-weight: 900; font-family: 'Courier New', Courier, monospace;
+            font-size: 120px; font-weight: 900; font-family: 'Courier New', Courier, monospace;
             background: linear-gradient(to bottom, #00fbff, #007fff);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             filter: drop-shadow(4px 4px 0px black);
             z-index: 10; text-align: center; width: 100%; pointer-events: none;
         }
+
+        /* 円形アイコンボタン (微調整用) */
+        .icon-adj-btn {
+            width: 55px; height: 55px; border-radius: 50%;
+            background: #fff; color: #444; font-size: 22px;
+            border: 3px solid #ccc; box-shadow: 0 4px 0 #999;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 100; flex-shrink: 0;
+        }
+        .icon-adj-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #999; }
         
         .pulse { animation: pulse-animation 0.5s infinite; }
         @keyframes pulse-animation {
@@ -69,10 +84,7 @@
         .circle-btn { flex: 1; background: linear-gradient(#6a1b9a, #4a148c); color: white; font-size: 14px; }
         .grand-btn { flex: 1; background: linear-gradient(#1565c0, #0d47a1); color: white; font-size: 14px; }
         
-        .adj-row { display: flex; width: 94%; gap: 10px; margin-top: 12px; }
-        .adj-btn { flex: 1; height: 70px; background: #fff; color: #444; font-size: 16px; border: 3px solid #ccc; box-shadow: 0 3px 0 #999; }
-
-        .fixed-spacer { height: 25px; }
+        .fixed-spacer { height: 20px; }
 
         .forgot-section {
             width: 96%; background: rgba(0,0,0,0.05); border-radius: 25px; 
@@ -99,9 +111,16 @@
     <div id="safety-text"></div>
     <div id="step-counter"></div>
 
-    <div id="circle-area">
-        <canvas id="layer-canvas" width="300" height="300"></canvas>
-        <div id="timer-text">0</div>
+    <!-- カウントダウン左右にボタンを配置 -->
+    <div class="timer-container">
+        <button class="icon-adj-btn" onclick="adjustTime(1)">≪</button>
+        
+        <div id="circle-area">
+            <canvas id="layer-canvas" width="260" height="260"></canvas>
+            <div id="timer-text">0</div>
+        </div>
+        
+        <button class="icon-adj-btn" onclick="adjustTime(-1)">≫</button>
     </div>
 
     <div class="btn-row">
@@ -109,16 +128,10 @@
         <button class="grand-btn" onclick="handleGrandClick()">グランドカラミティの<br>ふきだしが出たら押す</button>
     </div>
 
-    <div class="adj-row">
-        <button class="adj-btn" onclick="adjustTime(1)">≪ 1秒遅める</button>
-        <button class="adj-btn" onclick="adjustTime(-1)">1秒早める ≫</button>
-    </div>
-
     <div class="fixed-spacer"></div>
 
-    <!-- 押し忘れ同期パネル (名称からカラミティを削除) -->
     <div class="forgot-section">
-        <div class="forgot-header">⚠️ 押し忘れた時用のボタン</div>
+        <div class="forgot-header">⚠️ 押し忘れ時の同期</div>
         <div class="forgot-row">
             <button class="forgot-btn c-f-btn" onclick="handleCircleForgotClick()">サークル<br>(黄床で押す)</button>
             <button class="forgot-btn g-f-red" onclick="handleGrandForgotClick(false)">グランド<br>(赤床で押す)</button>
@@ -217,7 +230,8 @@
             if(!ctx) return; ctx.clearRect(0, 0, canvas.width, canvas.height);
             if (!isRunning || currentIsA) return;
             const centerX = canvas.width / 2; const centerY = canvas.height / 2;
-            const maxRadius = 140; const yellowColor = "#FFEB3B"; const safeGreen = "#E8F5E9";
+            const maxRadius = 120; // コンテナサイズ縮小に合わせて調整
+            const yellowColor = "#FFEB3B"; const safeGreen = "#E8F5E9";
             ctx.beginPath(); ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2);
             ctx.fillStyle = safeGreen; ctx.fill();
 
@@ -259,11 +273,9 @@
             updateUI();
         }
 
-        // --- グランド用ロジック (新秒数反映済) ---
         function startTimer(startWithA, isFirst) {
             resetAll(); isRunning = true; currentIsA = startWithA; currentSoundType = "G";
             let firstStep = isFirst; let seqIdx = 0;
-            // 新シーケンス反映
             const grandSeq = [22.25, 24, 22.75, 24, 22.5, 23.25, 23.5, 23.5, 23.25, 24, 22.5];
             const runCycle = () => {
                 let duration;
