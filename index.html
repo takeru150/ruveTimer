@@ -19,6 +19,8 @@
             display: flex; flex-direction: column; align-items: center;
             height: 100vh; overflow-x: hidden; overflow-y: auto; touch-action: manipulation;
             position: relative;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         #safety-text {
@@ -32,14 +34,13 @@
             margin-bottom: 5px;
         }
 
-        /* タイマーと微調整ボタンを横に並べるコンテナ */
         .timer-container {
             display: flex; align-items: center; justify-content: center; 
             width: 100%; gap: 5px; margin-top: 5px;
         }
 
         #circle-area {
-            position: relative; width: 260px; height: 260px; /* 少しサイズ調整 */
+            position: relative; width: 260px; height: 260px;
             display: flex; justify-content: center; align-items: center;
         }
         #layer-canvas { position: absolute; top: 0; left: 0; z-index: -1; }
@@ -51,13 +52,14 @@
             z-index: 10; text-align: center; width: 100%; pointer-events: none;
         }
 
-        /* 円形アイコンボタン (微調整用) */
         .icon-adj-btn {
             width: 55px; height: 55px; border-radius: 50%;
             background: #fff; color: #444; font-size: 22px;
             border: 3px solid #ccc; box-shadow: 0 4px 0 #999;
             display: flex; align-items: center; justify-content: center;
             z-index: 100; flex-shrink: 0;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
         }
         .icon-adj-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #999; }
         
@@ -77,20 +79,24 @@
             border-radius: 20px; font-weight: bold; cursor: pointer; 
             transition: transform 0.1s, box-shadow 0.1s;
             box-shadow: 0 4px 0 #000;
+            -webkit-appearance: none;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
         }
         button:active { transform: translateY(2px); box-shadow: 0 2px 0 #000; }
 
-        .btn-row { display: flex; width: 94%; gap: 10px; height: 110px; margin-top: 15px; }
-        .circle-btn { flex: 1; background: linear-gradient(#6a1b9a, #4a148c); color: white; font-size: 14px; }
-        .grand-btn { flex: 1; background: linear-gradient(#1565c0, #0d47a1); color: white; font-size: 14px; }
+        /* メインボタン 巨大化設定 */
+        .btn-row { display: flex; width: 94%; gap: 10px; height: 150px; margin-top: 15px; }
+        .circle-btn { flex: 1; background: linear-gradient(#6a1b9a, #4a148c); color: white; font-size: 16px; padding: 10px; line-height: 1.4; }
+        .grand-btn { flex: 1; background: linear-gradient(#1565c0, #0d47a1); color: white; font-size: 16px; padding: 10px; line-height: 1.4; }
         
-        .fixed-spacer { height: 20px; }
+        .fixed-spacer { height: 25px; }
 
         .forgot-section {
             width: 96%; background: rgba(0,0,0,0.05); border-radius: 25px; 
             padding: 10px 0; display: flex; flex-direction: column; align-items: center;
         }
-        .forgot-header { font-size: 13px; font-weight: 900; color: #555; margin-bottom: 8px; }
+        .forgot-header { font-size: 14px; font-weight: 900; color: #555; margin-bottom: 8px; }
         .forgot-row { display: flex; width: 94%; gap: 8px; height: 70px; }
         .forgot-btn { flex: 1; font-size: 11px; border-radius: 15px; box-shadow: 0 3px 0 #000; }
         .c-f-btn { background: linear-gradient(#ffa726, #fb8c00); color: white; border-color: #ef6c00; }
@@ -111,27 +117,27 @@
     <div id="safety-text"></div>
     <div id="step-counter"></div>
 
-    <!-- カウントダウン左右にボタンを配置 -->
     <div class="timer-container">
         <button class="icon-adj-btn" onclick="adjustTime(1)">≪</button>
-        
         <div id="circle-area">
             <canvas id="layer-canvas" width="260" height="260"></canvas>
             <div id="timer-text">0</div>
         </div>
-        
         <button class="icon-adj-btn" onclick="adjustTime(-1)">≫</button>
     </div>
 
     <div class="btn-row">
+        <!-- テキスト一字一句修正 -->
         <button class="circle-btn" onclick="handleCircleClick()">サークルカラミティの<br>ふきだしが出たら押す</button>
         <button class="grand-btn" onclick="handleGrandClick()">グランドカラミティの<br>ふきだしが出たら押す</button>
     </div>
 
     <div class="fixed-spacer"></div>
 
+    <!-- 押し忘れ同期パネル -->
     <div class="forgot-section">
-        <div class="forgot-header">⚠️ 押し忘れ時の同期</div>
+        <!-- 見出し一字一句修正 -->
+        <div class="forgot-header">押し忘れた時用のボタン</div>
         <div class="forgot-row">
             <button class="forgot-btn c-f-btn" onclick="handleCircleForgotClick()">サークル<br>(黄床で押す)</button>
             <button class="forgot-btn g-f-red" onclick="handleGrandForgotClick(false)">グランド<br>(赤床で押す)</button>
@@ -148,7 +154,7 @@
         <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="1" oninput="updateVolume(this.value)">
     </div>
 
-    <div id="credit">音声にはVOICEVOXを使用しています</div>
+    <div id="credit">音声：VOICEVOX / 画像：自作</div>
 
     <script>
         let timeLeft = 0;
@@ -165,6 +171,17 @@
         const audioB = new Audio('b321.wav');
         const audioC = new Audio('c321.wav');
         const allAudios = [audioAka, audioKiiro, audioA, audioB, audioC];
+        allAudios.forEach(a => { a.preload = "auto"; });
+
+        function playSafe(audioObj) {
+            if (!audioObj) return;
+            audioObj.pause();
+            audioObj.currentTime = 0;
+            const playPromise = audioObj.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(e => { console.log("Audio block avoided"); });
+            }
+        }
 
         async function requestWakeLock() {
             if (wakeLock !== null) return;
@@ -185,7 +202,11 @@
         function unlockAudio() {
             allAudios.forEach(a => {
                 a.muted = true;
-                a.play().then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(() => {});
+                const p = a.play();
+                if (p !== undefined) {
+                    p.then(() => { a.pause(); a.currentTime = 0; a.muted = false; })
+                     .catch(() => { a.muted = false; });
+                }
             });
         }
 
@@ -230,8 +251,7 @@
             if(!ctx) return; ctx.clearRect(0, 0, canvas.width, canvas.height);
             if (!isRunning || currentIsA) return;
             const centerX = canvas.width / 2; const centerY = canvas.height / 2;
-            const maxRadius = 120; // コンテナサイズ縮小に合わせて調整
-            const yellowColor = "#FFEB3B"; const safeGreen = "#E8F5E9";
+            const maxRadius = 120; const yellowColor = "#FFEB3B"; const safeGreen = "#E8F5E9";
             ctx.beginPath(); ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2);
             ctx.fillStyle = safeGreen; ctx.fill();
 
@@ -276,7 +296,7 @@
         function startTimer(startWithA, isFirst) {
             resetAll(); isRunning = true; currentIsA = startWithA; currentSoundType = "G";
             let firstStep = isFirst; let seqIdx = 0;
-            const grandSeq = [22.25, 24, 22.75, 24, 22.5, 23.25, 23.5, 23.5, 23.25, 24, 22.5];
+            const grandSeq = [21.75, 21.5, 21, 24, 23, 24, 23, 23, 23, 24, 23];
             const runCycle = () => {
                 let duration;
                 if (firstStep) { duration = 6; firstStep = false; document.getElementById('step-counter').innerText = "グランド: 1 / 12回目"; } 
@@ -284,7 +304,7 @@
                 timeLeft = duration; let warningPlayed = false;
                 timerId = setInterval(() => {
                     timeLeft -= 0.016;
-                    if (timeLeft <= 5 && !warningPlayed) { currentIsA ? audioAka.play() : audioKiiro.play(); warningPlayed = true; }
+                    if (timeLeft <= 5 && !warningPlayed) { playSafe(currentIsA ? audioAka : audioKiiro); warningPlayed = true; }
                     if (timeLeft <= 0) { clearInterval(timerId); currentIsA = !currentIsA; runCycle(); }
                     updateUI();
                 }, 16);
@@ -301,7 +321,7 @@
                 let warningPlayed = false;
                 timerId = setInterval(() => {
                     timeLeft -= 0.016;
-                    if (timeLeft <= 5 && !warningPlayed) { currentIsA ? audioAka.play() : audioKiiro.play(); warningPlayed = true; }
+                    if (timeLeft <= 5 && !warningPlayed) { playSafe(currentIsA ? audioAka : audioKiiro); warningPlayed = true; }
                     if (timeLeft <= 0) { clearInterval(timerId); currentIsA = !currentIsA; runCycle(); }
                     updateUI();
                 }, 16);
@@ -324,7 +344,7 @@
                 timerId = setInterval(() => {
                     timeLeft -= 0.016;
                     if (timeLeft <= 5 && !warningPlayed) {
-                        if(step.s === 'A') audioA.play(); if(step.s === 'B') audioB.play(); if(step.s === 'C') audioC.play();
+                        if(step.s === 'A') playSafe(audioA); if(step.s === 'B') playSafe(audioB); if(step.s === 'C') playSafe(audioC);
                         warningPlayed = true;
                     }
                     if (timeLeft <= 0) { clearInterval(timerId); isFirstAction = false; idx = (idx + 1) % sequence.length; runCircleStep(); }
@@ -343,7 +363,7 @@
                 let warningPlayed = false;
                 timerId = setInterval(() => {
                     timeLeft -= 0.016;
-                    if (timeLeft <= 5 && !warningPlayed) { audioKiiro.play(); warningPlayed = true; }
+                    if (timeLeft <= 5 && !warningPlayed) { playSafe(audioKiiro); warningPlayed = true; }
                     if (timeLeft <= 0) { clearInterval(timerId); runCycle(); }
                     updateUI();
                 }, 16);
