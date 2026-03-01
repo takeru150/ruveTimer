@@ -296,7 +296,7 @@
         function startTimer(startWithA, isFirst) {
             resetAll(); isRunning = true; currentIsA = startWithA; currentSoundType = "G";
             let firstStep = isFirst; let seqIdx = 0;
-            const grandSeq = [21.75, 21.5, 21, 24, 23, 24, 23, 23, 23, 24, 23];
+            const grandSeq = [22.25, 24, 22.75, 24, 22.5, 23.25, 23.5, 23.5, 23.25, 24, 22.5];
             const runCycle = () => {
                 let duration;
                 if (firstStep) { duration = 6; firstStep = false; document.getElementById('step-counter').innerText = "グランド: 1 / 12回目"; } 
@@ -373,3 +373,4 @@
     </script>
 </body>
 </html>
+
