@@ -4,117 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ルベランタイマー Pro</title>
-
-    <!-- アイコン設定 -->
     <link rel="icon" href="kapa.png">
     <link rel="apple-touch-icon" href="kapa.png">
-
     <style>
-        :root {
-            --bg-color: #f8f9fa;
-            --border-color: #222;
-        }
+        :root { --bg-color: #f8f9fa; --border-color: #222; }
         body {
             margin: 0; font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg-color);
             display: flex; flex-direction: column; align-items: center;
             height: 100vh; overflow-x: hidden; overflow-y: auto; touch-action: manipulation;
-            position: relative;
-            user-select: none;
-            -webkit-user-select: none;
+            position: relative; user-select: none; -webkit-user-select: none;
         }
-
-        #safety-text {
-            height: 40px; font-size: 26px; font-weight: 900; 
-            margin-top: 12px; color: #222; text-align: center;
-            letter-spacing: 1px; text-shadow: 1px 1px 0px white;
-        }
-        
-        #step-counter {
-            height: 20px; font-size: 14px; font-weight: bold; color: #888;
-            margin-bottom: 5px;
-        }
-
-        /* タイマーコンテナ：PCでも広がりすぎないよう最大幅を設定 */
-        .timer-container {
-            position: relative;
-            display: flex; align-items: center; justify-content: center; 
-            width: 100%; max-width: 500px; /* これでブラウザでも左右に離れすぎません */
-            height: 330px; margin-top: 5px;
-        }
-
-        #circle-area {
-            position: relative; width: 320px; height: 320px;
-            display: flex; justify-content: center; align-items: center;
-            z-index: 10;
-        }
+        #safety-text { height: 40px; font-size: 26px; font-weight: 900; margin-top: 12px; color: #222; text-align: center; letter-spacing: 1px; text-shadow: 1px 1px 0px white; }
+        #step-counter { height: 20px; font-size: 14px; font-weight: bold; color: #888; margin-bottom: 5px; }
+        .timer-container { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; max-width: 500px; height: 330px; margin-top: 5px; }
+        #circle-area { position: relative; width: 320px; height: 320px; display: flex; justify-content: center; align-items: center; z-index: 10; }
         #layer-canvas { position: absolute; top: 0; left: 0; z-index: -1; }
-        #timer-text {
-            font-size: 130px; font-weight: 900; font-family: 'Courier New', Courier, monospace;
-            background: linear-gradient(to bottom, #00fbff, #007fff);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            filter: drop-shadow(4px 4px 0px black);
-            text-align: center; width: 100%; pointer-events: none;
-        }
-
-        /* 微調整ボタン：コンテナ基準で配置 */
-        .icon-adj-btn {
-            position: absolute; top: 50%; transform: translateY(-50%);
-            width: 80px; height: 80px; border-radius: 50%;
-            background: rgba(255, 255, 255, 0.7); color: #444; font-size: 32px;
-            border: 4px solid #ccc; box-shadow: 0 4px 0 #999;
-            display: flex; align-items: center; justify-content: center;
-            z-index: 100; outline: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .left-adj { left: 5px; }
-        .right-adj { right: 5px; }
+        #timer-text { font-size: 130px; font-weight: 900; font-family: 'Courier New', Courier, monospace; background: linear-gradient(to bottom, #00fbff, #007fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(4px 4px 0px black); text-align: center; width: 100%; pointer-events: none; }
+        .icon-adj-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 80px; height: 80px; border-radius: 50%; background: rgba(255, 255, 255, 0.7); color: #444; font-size: 32px; border: 4px solid #ccc; box-shadow: 0 4px 0 #999; display: flex; align-items: center; justify-content: center; z-index: 100; outline: none; -webkit-tap-highlight-color: transparent; }
+        .left-adj { left: 5px; } .right-adj { right: 5px; }
         .icon-adj-btn:active { transform: translateY(-48%); box-shadow: 0 2px 0 #999; }
-        
         .pulse { animation: pulse-animation 0.5s infinite; }
-        @keyframes pulse-animation {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        .stripe-bg {
-            background: repeating-linear-gradient(-45deg, #ff8a80, #ff8a80 60px, #81c784 60px, #81c784 120px) !important;
-        }
-        
-        button { 
-            border: 3px solid var(--border-color); 
-            border-radius: 20px; font-weight: bold; cursor: pointer; 
-            transition: transform 0.1s, box-shadow 0.1s;
-            box-shadow: 0 4px 0 #000;
-            -webkit-appearance: none;
-            outline: none;
-            -webkit-tap-highlight-color: transparent;
-        }
+        @keyframes pulse-animation { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        .stripe-bg { background: repeating-linear-gradient(-45deg, #ff8a80, #ff8a80 60px, #81c784 60px, #81c784 120px) !important; }
+        button { border: 3px solid var(--border-color); border-radius: 20px; font-weight: bold; cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; box-shadow: 0 4px 0 #000; -webkit-appearance: none; outline: none; -webkit-tap-highlight-color: transparent; }
         button:active { transform: translateY(2px); box-shadow: 0 2px 0 #000; }
-
         .btn-row { display: flex; width: 94%; gap: 10px; height: 150px; margin-top: 10px; }
         .circle-btn { flex: 1; background: linear-gradient(#6a1b9a, #4a148c); color: white; font-size: 16px; padding: 10px; line-height: 1.4; }
         .grand-btn { flex: 1; background: linear-gradient(#1565c0, #0d47a1); color: white; font-size: 16px; padding: 10px; line-height: 1.4; }
-        
         .fixed-spacer { height: 25px; }
-
-        .forgot-section {
-            width: 96%; background: rgba(0,0,0,0.05); border-radius: 25px; 
-            padding: 10px 0; display: flex; flex-direction: column; align-items: center;
-        }
+        .forgot-section { width: 96%; background: rgba(0,0,0,0.05); border-radius: 25px; padding: 10px 0; display: flex; flex-direction: column; align-items: center; }
         .forgot-header { font-size: 14px; font-weight: 900; color: #555; margin-bottom: 8px; }
         .forgot-row { display: flex; width: 94%; gap: 8px; height: 70px; }
         .forgot-btn { flex: 1; font-size: 11px; border-radius: 15px; box-shadow: 0 3px 0 #000; }
         .c-f-btn { background: linear-gradient(#ffa726, #fb8c00); color: white; border-color: #ef6c00; }
         .g-f-red { background: linear-gradient(#ef5350, #c62828); color: white; border-color: #b71c1c; }
         .g-f-yellow { background: linear-gradient(#fdd835, #fbc02d); color: #333; border-color: #f9a825; }
-
         .stop-panel { display: flex; align-items: center; justify-content: center; margin: 15px 0 10px 0; width: 100%; }
         .stop-btn { width: 150px; height: 55px; background: linear-gradient(#9e9e9e, #616161); color: white; font-size: 20px; }
-        
         #volume-area { width: 85%; display: flex; align-items: center; gap: 15px; margin-top: 5px; }
         #volume-slider { flex-grow: 1; cursor: pointer; height: 10px; accent-color: #2196F3; }
-
+        .test-toggle-btn { height: 35px; font-size: 12px; padding: 0 15px; background: #ddd; margin-top: 10px; }
+        .test-row { display: none; gap: 5px; margin-top: 10px; width: 96%; flex-wrap: wrap; justify-content: center; }
+        .test-btn { height: 32px; font-size: 10px; padding: 0 8px; background: #eee; box-shadow: 0 2px 0 #999; margin-bottom: 5px; border-radius: 10px; }
+        .test-btn-plus { background: #e3f2fd; border-color: #2196f3; }
+        .test-btn-minus { background: #ffebee; border-color: #f44336; }
         #credit { font-size: 10px; color: #aaa; padding: 15px 0; text-align: center; }
     </style>
 </head>
@@ -125,12 +58,10 @@
 
     <div class="timer-container">
         <button class="icon-adj-btn left-adj" onclick="adjustTime(1)">≪</button>
-        
         <div id="circle-area">
             <canvas id="layer-canvas" width="320" height="320"></canvas>
             <div id="timer-text">0</div>
         </div>
-        
         <button class="icon-adj-btn right-adj" onclick="adjustTime(-1)">≫</button>
     </div>
 
@@ -159,62 +90,71 @@
         <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="1" oninput="updateVolume(this.value)">
     </div>
 
-    <div id="credit">音声：VOICEVOX / 画像：自作</div>
+    <button class="test-toggle-btn" onclick="toggleTestMode()">テストモード表示切替</button>
+    <div id="test-row" class="test-row">
+        <button class="test-btn" onclick="previewPattern('A')">A</button>
+        <button class="test-btn" onclick="previewPattern('A2')">A2</button>
+        <button class="test-btn" onclick="previewPattern('B')">B</button>
+        <button class="test-btn" onclick="previewPattern('C')">C</button>
+        <button class="test-btn" onclick="previewPattern('G1')">G1</button>
+        <button class="test-btn" onclick="previewPattern('G2')">G2</button>
+        <button class="test-btn" onclick="previewPattern('G3')">G3</button>
+        <button class="test-btn" onclick="previewPattern('G4')">G4</button>
+        <button class="test-btn" onclick="previewPattern('G5')">G5</button>
+        <button class="test-btn" onclick="previewPattern('G6')">G6</button>
+        <div style="width:100%; display:flex; gap:4px; justify-content:center; margin-top:5px;">
+            <button class="test-btn test-btn-minus" onclick="adjustTime(-10)">-10s</button>
+            <button class="test-btn test-btn-minus" onclick="adjustTime(-5)">-5s</button>
+            <button class="test-btn test-btn-minus" onclick="adjustTime(-3)">-3s</button>
+            <button class="test-btn test-btn-minus" onclick="adjustTime(-1)">-1s</button>
+            <button class="test-btn test-btn-plus" onclick="adjustTime(1)">+1s</button>
+            <button class="test-btn test-btn-plus" onclick="adjustTime(3)">+3s</button>
+            <button class="test-btn test-btn-plus" onclick="adjustTime(5)">+5s</button>
+            <button class="test-btn test-btn-plus" onclick="adjustTime(10)">+10s</button>
+        </div>
+    </div>
+
+    <div id="credit">音声：VOICEVOX / 画像：自作 / <span id="last-update">最終更新を取得中...</span></div>
 
     <script>
-        let timeLeft = 0;
-        let timerId = null;
-        let isRunning = false;
-        let currentIsA = true; 
-        let safetyText = "";
-        let currentSoundType = "G"; 
-        let wakeLock = null;
+        let timeLeft = 0, timerId = null, isRunning = false, currentIsA = true, safetyText = "";
+        let currentSoundType = "G", wakeLock = null, currentStepNum = 0, stepTotalDuration = 0;
+        let isAbsoluteFirst = false, isLoopingToStart = false;
 
-        const audioAka = new Audio('aka321.wav');
-        const audioKiiro = new Audio('kiiro321.wav');
-        const audioA = new Audio('a321.wav');
-        const audioB = new Audio('b321.wav');
-        const audioC = new Audio('c321.wav');
-        const allAudios = [audioAka, audioKiiro, audioA, audioB, audioC];
+        const audioAka = new Audio('aka321.wav'), audioKiiro = new Audio('kiiro321.wav');
+        const audioA = new Audio('a321.wav'), audioB = new Audio('b321.wav'), audioC = new Audio('c321.wav');
+        // グランド黄床専用音声
+        const audioG1 = new Audio('g1.wav'), audioG2 = new Audio('g2.wav'), audioG3 = new Audio('g3.wav');
+        const audioG4 = new Audio('g4.wav'), audioG5 = new Audio('g5.wav'), audioG6 = new Audio('g6.wav');
+        
+        const allAudios = [audioAka, audioKiiro, audioA, audioB, audioC, audioG1, audioG2, audioG3, audioG4, audioG5, audioG6];
         allAudios.forEach(a => { a.preload = "auto"; });
 
+        async function fetchLastUpdate() {
+            try {
+                const response = await fetch('https://api.github.com/repos/takeru150/ruveTimer');
+                const data = await response.json();
+                const date = new Date(data.pushed_at);
+                document.getElementById('last-update').innerText = `最終更新：${date.getFullYear()}/${(date.getMonth()+1).toString().padStart(2,'0')}/${date.getDate().toString().padStart(2,'0')}`;
+            } catch (e) { document.getElementById('last-update').innerText = ""; }
+        }
+        fetchLastUpdate();
+
         function playSafe(audioObj) {
-            if (!audioObj) return;
-            audioObj.pause(); audioObj.currentTime = 0;
-            const p = audioObj.play();
-            if (p !== undefined) { p.catch(e => { console.log("Play blocked"); }); }
+            if (!audioObj) return; audioObj.pause(); audioObj.currentTime = 0;
+            const p = audioObj.play(); if (p !== undefined) { p.catch(() => {}); }
         }
 
         async function requestWakeLock() {
             if (wakeLock !== null) return;
-            try {
-                if ('wakeLock' in navigator) {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                    wakeLock.addEventListener('release', () => { wakeLock = null; });
-                }
-            } catch (err) {}
+            try { if ('wakeLock' in navigator) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch (err) {}
         }
 
-        document.addEventListener('visibilitychange', async () => {
-            if (document.visibilityState === 'visible') { await requestWakeLock(); }
-        });
-
+        document.addEventListener('visibilitychange', async () => { if (document.visibilityState === 'visible') { await requestWakeLock(); } });
         function updateVolume(val) { allAudios.forEach(a => a.volume = val); }
-
-        function unlockAudio() {
-            allAudios.forEach(a => {
-                a.muted = true;
-                const p = a.play();
-                if (p !== undefined) {
-                    p.then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(() => { a.muted = false; });
-                }
-            });
-        }
-
-        function adjustTime(amount) {
-            if (!isRunning) return;
-            timeLeft += amount; if (timeLeft < 0) timeLeft = 0; updateUI();
-        }
+        function unlockAudio() { allAudios.forEach(a => { a.muted = true; const p = a.play(); if (p !== undefined) { p.then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(() => { a.muted = false; }); } }); }
+        function adjustTime(amount) { if (!isRunning) return; timeLeft += amount; if (timeLeft < 0) timeLeft = 0; updateUI(); }
+        function toggleTestMode() { const row = document.getElementById('test-row'); row.style.display = (row.style.display === 'flex') ? 'none' : 'flex'; }
 
         function handleGrandClick() { unlockAudio(); startTimer(true, true); }
         function handleCircleClick() { unlockAudio(); startCircleCalamityTimer(); }
@@ -222,72 +162,87 @@
         function handleCircleForgotClick() { unlockAudio(); startCircleForgotTimer(); }
         function handleGrandForgotClick(startWithA) { unlockAudio(); startGrandForgotTimer(startWithA); }
 
+        function previewPattern(type) {
+            resetAll(); isRunning = true; currentIsA = false; currentSoundType = type;
+            const gMap = { 'G1':2, 'G2':4, 'G3':6, 'G4':8, 'G5':10, 'G6':12 };
+            if (gMap[type]) { currentSoundType = 'G'; currentStepNum = gMap[type]; safetyText = type + "確認"; }
+            else { safetyText = type + "確認"; }
+            updateUI();
+        }
+
         function createGridPattern() {
-            const pCanvas = document.createElement('canvas');
-            const pCtx = pCanvas.getContext('2d');
-            pCanvas.width = 12; pCanvas.height = 12;
-            pCtx.strokeStyle = "rgba(0,0,0,0.3)"; pCtx.lineWidth = 1;
+            const pCanvas = document.createElement('canvas'); const pCtx = pCanvas.getContext('2d');
+            pCanvas.width = 12; pCanvas.height = 12; pCtx.strokeStyle = "rgba(0,0,0,0.3)"; pCtx.lineWidth = 1;
             pCtx.beginPath(); pCtx.moveTo(0, 0); pCtx.lineTo(12, 12);
             pCtx.moveTo(12, 0); pCtx.lineTo(0, 12); pCtx.stroke();
             return pCanvas;
         }
 
         function drawRange(ctx, centerX, centerY, maxRadius, startPer, endPer, color, isGrid = false) {
-            const innerR = maxRadius * (startPer / 100);
-            const outerR = maxRadius * (endPer / 100);
-            ctx.beginPath(); ctx.arc(centerX, centerY, outerR, 0, Math.PI * 2);
-            ctx.arc(centerX, centerY, innerR, 0, Math.PI * 2, true);
+            const innerR = maxRadius * (startPer / 100), outerR = maxRadius * (endPer / 100);
+            ctx.beginPath(); ctx.arc(centerX, centerY, outerR, 0, Math.PI * 2); ctx.arc(centerX, centerY, innerR, 0, Math.PI * 2, true);
             ctx.fillStyle = color; ctx.fill();
-            if (isGrid) {
-                const gridPattern = ctx.createPattern(createGridPattern(), 'repeat');
-                ctx.fillStyle = gridPattern; ctx.fill();
-            }
+            if (isGrid) { const gridPattern = ctx.createPattern(createGridPattern(), 'repeat'); ctx.fillStyle = gridPattern; ctx.fill(); }
         }
 
         function drawDynamicCircles() {
             const canvas = document.getElementById('layer-canvas');
             const ctx = canvas.getContext('2d');
             if(!ctx) return; ctx.clearRect(0, 0, canvas.width, canvas.height);
-            if (!isRunning || currentIsA) return;
-            const centerX = canvas.width / 2; const centerY = canvas.height / 2;
-            const maxRadius = 158; 
-            const yellowColor = "#FFEB3B"; const safeGreen = "#E8F5E9";
-            ctx.beginPath(); ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2);
-            ctx.fillStyle = safeGreen; ctx.fill();
+            let isPersistence = (currentIsA && currentSoundType === 'G' && !isAbsoluteFirst && timeLeft > (stepTotalDuration - 7));
+            if (!isRunning || (currentIsA && !isPersistence)) return;
+
+            if (currentSoundType === 'G_SYNC') {
+                const centerX = canvas.width / 2, centerY = canvas.height / 2, maxRadius = 158;
+                ctx.beginPath(); ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2); ctx.fillStyle = "#FFFFFF"; ctx.fill();
+                ctx.beginPath(); ctx.arc(centerX, centerY, maxRadius * 0.15, 0, Math.PI * 2); ctx.strokeStyle = "rgba(0,0,0,0.6)"; ctx.lineWidth = 2; ctx.stroke();
+                drawRange(ctx, centerX, centerY, maxRadius, 30, 50, "rgba(0,0,0,0.04)", true);
+                ctx.beginPath(); ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2); ctx.strokeStyle = "black"; ctx.lineWidth = 3; ctx.stroke();
+                return;
+            }
+
+            let drawStep = currentStepNum;
+            if (isPersistence) { drawStep = (isLoopingToStart) ? 12 : (currentStepNum > 1 ? currentStepNum - 1 : currentStepNum); }
+
+            const centerX = canvas.width / 2, centerY = canvas.height / 2, maxRadius = 158;
+            const yellowAtk = "#FFEB3B", whiteSafe = "#FFFFFF", thinYellowBg = "#FFF9C4";
+            let baseColor = (currentSoundType === 'G' && drawStep !== 12) ? thinYellowBg : "#FFFFFF";
+            ctx.beginPath(); ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2); ctx.fillStyle = baseColor; ctx.fill();
 
             if (currentSoundType === 'A') {
-                drawRange(ctx, centerX, centerY, maxRadius, 0, 15, yellowColor); 
-                drawRange(ctx, centerX, centerY, maxRadius, 30, 50, yellowColor, true); 
-                drawRange(ctx, centerX, centerY, maxRadius, 65, 80, yellowColor); 
+                drawRange(ctx, centerX, centerY, maxRadius, 0, 15, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 30, 50, yellowAtk, true); drawRange(ctx, centerX, centerY, maxRadius, 65, 80, yellowAtk); 
+            } else if (currentSoundType === 'A2') {
+                drawRange(ctx, centerX, centerY, maxRadius, 30, 50, yellowAtk, true); drawRange(ctx, centerX, centerY, maxRadius, 65, 80, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 95, 100, yellowAtk); 
             } else if (currentSoundType === 'B') {
-                drawRange(ctx, centerX, centerY, maxRadius, 20, 35, yellowColor); 
-                drawRange(ctx, centerX, centerY, maxRadius, 50, 65, yellowColor); 
-                drawRange(ctx, centerX, centerY, maxRadius, 80, 95, yellowColor); 
+                drawRange(ctx, centerX, centerY, maxRadius, 20, 35, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 50, 65, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 80, 95, yellowAtk); 
             } else if (currentSoundType === 'C') {
-                drawRange(ctx, centerX, centerY, maxRadius, 35, 65, yellowColor); 
-                drawRange(ctx, centerX, centerY, maxRadius, 90, 100, yellowColor); 
+                drawRange(ctx, centerX, centerY, maxRadius, 35, 65, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 90, 100, yellowAtk); 
+            } else if (currentSoundType === 'G') {
+                if (drawStep === 2) { drawRange(ctx, centerX, centerY, maxRadius, 0, 30, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 65, 80, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 80, 95, whiteSafe); }
+                else if (drawStep === 4) { drawRange(ctx, centerX, centerY, maxRadius, 30, 65, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 95, 100, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 80, 95, whiteSafe); }
+                else if (drawStep === 6) { drawRange(ctx, centerX, centerY, maxRadius, 20, 30, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 65, 90, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 90, 100, whiteSafe); }
+                else if (drawStep === 8) { drawRange(ctx, centerX, centerY, maxRadius, 0, 20, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 80, 100, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 50, 65, whiteSafe); }
+                else if (drawStep === 10) { drawRange(ctx, centerX, centerY, maxRadius, 0, 20, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 50, 80, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 30, 50, whiteSafe); }
+                else if (drawStep === 12) { drawRange(ctx, centerX, centerY, maxRadius, 30, 50, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 80, 100, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 65, 80, thinYellowBg); }
             }
-            ctx.beginPath(); ctx.arc(centerX, centerY, maxRadius * 0.15, 0, Math.PI * 2);
-            ctx.strokeStyle = "rgba(0,0,0,0.6)"; ctx.lineWidth = 2; ctx.stroke();
+            ctx.beginPath(); ctx.arc(centerX, centerY, maxRadius * 0.15, 0, Math.PI * 2); ctx.strokeStyle = "rgba(0,0,0,0.6)"; ctx.lineWidth = 2; ctx.stroke();
             drawRange(ctx, centerX, centerY, maxRadius, 30, 50, "rgba(0,0,0,0.04)", true);
-            ctx.beginPath(); ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2);
-            ctx.strokeStyle = "black"; ctx.lineWidth = 3; ctx.stroke();
+            ctx.beginPath(); ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2); ctx.strokeStyle = "black"; ctx.lineWidth = 3; ctx.stroke();
         }
 
         function updateUI() {
             const timerEl = document.getElementById('timer-text');
             timerEl.innerText = (isRunning && timeLeft > 0) ? Math.ceil(timeLeft) : "0";
-            if (isRunning && timeLeft > 0 && timeLeft <= 5) { timerEl.classList.add('pulse'); } 
-            else { timerEl.classList.remove('pulse'); }
+            if (isRunning && timeLeft > 0 && timeLeft <= 5) { timerEl.classList.add('pulse'); } else { timerEl.classList.remove('pulse'); }
             document.getElementById('safety-text').innerText = safetyText;
-            if (isRunning && currentIsA) { document.body.classList.add("stripe-bg"); } 
-            else { document.body.classList.remove("stripe-bg"); }
+            let isPersistence = (currentIsA && currentSoundType === 'G' && !isAbsoluteFirst && timeLeft > (stepTotalDuration - 7));
+            if (isRunning && currentIsA && !isPersistence) { document.body.classList.add("stripe-bg"); } else { document.body.classList.remove("stripe-bg"); }
             drawDynamicCircles();
         }
 
         function resetAll() {
             if (wakeLock !== null) { wakeLock.release().then(() => wakeLock = null); }
-            clearInterval(timerId); isRunning = false; timeLeft = 0; safetyText = ""; 
+            clearInterval(timerId); isRunning = false; timeLeft = 0; safetyText = ""; currentStepNum = 0; isLoopingToStart = false; isAbsoluteFirst = false;
             document.getElementById('step-counter').innerText = "";
             allAudios.forEach(a => { a.pause(); a.currentTime = 0; });
             updateUI();
@@ -295,17 +250,44 @@
 
         function startTimer(startWithA, isFirst) {
             resetAll(); isRunning = true; currentIsA = startWithA; currentSoundType = "G";
-            let firstStep = isFirst; let seqIdx = 0;
-            const grandSeq = [22.25, 24, 22.75, 24, 22.5, 23.25, 23.5, 23.5, 23.25, 24, 22.5];
+            isAbsoluteFirst = isFirst;
+            let seqIdx = -1;
+            const grandSeq = [23, 22.25, 24.25, 22.25, 24.25, 22.5, 24.25, 22.5, 23.25, 23, 23, 23.5];
+            const grandTexts = {
+                2: "【2連】金網線上安置から", 4: "【2連】外周真ん中安置から", 6: "【2連】金網線上安置から",
+                8: "【2連】線上絶対安置", 10: "【2連】金網絶対安置", 12: "【2連】線上絶対安置"
+            };
+            const grandAudios = { 2: audioG1, 4: audioG2, 6: audioG3, 8: audioG4, 10: audioG5, 12: audioG6 };
+
             const runCycle = () => {
-                let duration;
-                if (firstStep) { duration = 6; firstStep = false; document.getElementById('step-counter').innerText = "グランド: 1 / 12回目"; } 
-                else { duration = grandSeq[seqIdx]; document.getElementById('step-counter').innerText = "グランド: " + (seqIdx + 2) + " / 12回目"; seqIdx = (seqIdx + 1) % grandSeq.length; }
+                seqIdx = (seqIdx + 1) % 12;
+                currentStepNum = seqIdx + 1;
+                isLoopingToStart = (currentStepNum === 1 && !isAbsoluteFirst);
+
+                let duration = grandSeq[seqIdx];
+                if (isAbsoluteFirst && currentStepNum === 1) { duration = 6; }
+
+                currentIsA = (currentStepNum % 2 !== 0);
+                stepTotalDuration = duration;
+                
+                // 安置テキストのセット（偶数回目のみ）
+                safetyText = grandTexts[currentStepNum] || "";
+                
+                document.getElementById('step-counter').innerText = "グランド: " + currentStepNum + " / 12回目";
                 timeLeft = duration; let warningPlayed = false;
+
                 timerId = setInterval(() => {
                     timeLeft -= 0.016;
-                    if (timeLeft <= 5 && !warningPlayed) { playSafe(currentIsA ? audioAka : audioKiiro); warningPlayed = true; }
-                    if (timeLeft <= 0) { clearInterval(timerId); currentIsA = !currentIsA; runCycle(); }
+                    if (timeLeft <= 5 && !warningPlayed) {
+                        if (currentIsA) {
+                            playSafe(audioAka);
+                        } else {
+                            // 黄床回ごとの専用音声
+                            playSafe(grandAudios[currentStepNum] || audioKiiro);
+                        }
+                        warningPlayed = true;
+                    }
+                    if (timeLeft <= 0) { clearInterval(timerId); isAbsoluteFirst = false; runCycle(); }
                     updateUI();
                 }, 16);
             };
@@ -313,12 +295,13 @@
         }
 
         function startGrandForgotTimer(startWithA) {
-            resetAll(); isRunning = true; currentIsA = startWithA; currentSoundType = "G";
+            resetAll(); isRunning = true; currentIsA = startWithA; currentSoundType = "G_SYNC";
             let isFirstStep = true;
             const runCycle = () => {
+                let duration = isFirstStep ? 20.5 : 23; isFirstStep = false;
+                stepTotalDuration = duration;
                 document.getElementById('step-counter').innerText = "グランド同期中";
-                timeLeft = isFirstStep ? 20.5 : 23; isFirstStep = false;
-                let warningPlayed = false;
+                timeLeft = duration; let warningPlayed = false;
                 timerId = setInterval(() => {
                     timeLeft -= 0.016;
                     if (timeLeft <= 5 && !warningPlayed) { playSafe(currentIsA ? audioAka : audioKiiro); warningPlayed = true; }
@@ -331,22 +314,16 @@
 
         function startCircleCalamityTimer() {
             resetAll(); isRunning = true; currentIsA = false; 
-            const sequence = [
-                {t:21, s:'A', m:'線上安置'}, {t:23.75, s:'A', m:'線上安置'}, {t:21, s:'B', m:'金網安置'},
-                {t:23, s:'A', m:'線上安置'}, {t:20.50, s:'C', m:'外周真ん中安置'}, {t:25.50, s:'B', m:'金網安置'}
-            ];
-            let idx = 0; let isFirstAction = true;
+            const sequence = [{t:21, s:'A', m:'線上安置'}, {t:23.75, s:'A2', m:'線上安置'}, {t:21, s:'B', m:'金網安置'}, {t:23, s:'A', m:'線上安置'}, {t:20.50, s:'C', m:'外周真ん中安置'}, {t:25.50, s:'B', m:'金網安置'}];
+            let idx = 0, isFirstAction = true;
             const runCircleStep = () => {
-                let step = sequence[idx]; currentSoundType = step.s; 
-                document.getElementById('step-counter').innerText = "サークル: " + (idx + 1) + " / 6回目";
+                let step = sequence[idx]; currentSoundType = step.s; currentStepNum = idx + 1;
+                document.getElementById('step-counter').innerText = "サークル: " + currentStepNum + " / 6回目";
                 timeLeft = (isFirstAction) ? 5 : step.t; safetyText = step.m;
                 let warningPlayed = false;
                 timerId = setInterval(() => {
                     timeLeft -= 0.016;
-                    if (timeLeft <= 5 && !warningPlayed) {
-                        if(step.s === 'A') playSafe(audioA); if(step.s === 'B') playSafe(audioB); if(step.s === 'C') playSafe(audioC);
-                        warningPlayed = true;
-                    }
+                    if (timeLeft <= 5 && !warningPlayed) { if(step.s === 'A' || step.s === 'A2') playSafe(audioA); if(step.s === 'B') playSafe(audioB); if(step.s === 'C') playSafe(audioC); warningPlayed = true; }
                     if (timeLeft <= 0) { clearInterval(timerId); isFirstAction = false; idx = (idx + 1) % sequence.length; runCircleStep(); }
                     updateUI();
                 }, 16);
@@ -355,7 +332,7 @@
         }
 
         function startCircleForgotTimer() {
-            resetAll(); isRunning = true; currentIsA = false; currentSoundType = "G";
+            resetAll(); isRunning = true; currentIsA = false; currentSoundType = "G_SYNC";
             let isFirstCycle = true;
             const runCycle = () => {
                 document.getElementById('step-counter').innerText = "サークル同期中";
@@ -373,4 +350,3 @@
     </script>
 </body>
 </html>
-
