@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ルベランタイマー Pro</title>
+    <title>ルベランタイマー Pro 正式版</title>
     <link rel="icon" href="kapa.png">
     <link rel="apple-touch-icon" href="kapa.png">
     <style>
@@ -90,7 +90,7 @@
         <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="1" oninput="updateVolume(this.value)">
     </div>
 
-    <button class="test-toggle-btn" onclick="toggleTestMode()">テストモード表示切替</button>
+    <button class="test-toggle-btn" onclick="toggleTestMode()">テストモード</button>
     <div id="test-row" class="test-row">
         <button class="test-btn" onclick="previewPattern('A')">A</button>
         <button class="test-btn" onclick="previewPattern('A2')">A2</button>
@@ -123,12 +123,18 @@
 
         const audioAka = new Audio('aka321.wav'), audioKiiro = new Audio('kiiro321.wav');
         const audioA = new Audio('a321.wav'), audioB = new Audio('b321.wav'), audioC = new Audio('c321.wav');
-        // グランド黄床専用音声
+        const audioOso = new Audio('oso.wav'); 
         const audioG1 = new Audio('g1.wav'), audioG2 = new Audio('g2.wav'), audioG3 = new Audio('g3.wav');
         const audioG4 = new Audio('g4.wav'), audioG5 = new Audio('g5.wav'), audioG6 = new Audio('g6.wav');
         
-        const allAudios = [audioAka, audioKiiro, audioA, audioB, audioC, audioG1, audioG2, audioG3, audioG4, audioG5, audioG6];
+        const allAudios = [audioAka, audioKiiro, audioA, audioB, audioC, audioG1, audioG2, audioG3, audioG4, audioG5, audioG6, audioOso];
         allAudios.forEach(a => { a.preload = "auto"; });
+
+        const grandTextsMap = {
+            2: "【2連】金網線上安置から", 4: "【2連】外周真ん中安置から", 6: "【2連】金網線上安置から",
+            8: "【2連】線上絶対安置", 10: "【2連】金網絶対安置", 12: "【2連】外寄り線絶対安置"
+        };
+        const grandAudiosMap = { 2: audioG1, 4: audioG2, 6: audioG3, 8: audioG4, 10: audioG5, 12: audioG6 };
 
         async function fetchLastUpdate() {
             try {
@@ -158,15 +164,22 @@
 
         function handleGrandClick() { unlockAudio(); startTimer(true, true); }
         function handleCircleClick() { unlockAudio(); startCircleCalamityTimer(); }
-        function handleAdjustClick(a, b) { unlockAudio(); startTimer(a, b); }
         function handleCircleForgotClick() { unlockAudio(); startCircleForgotTimer(); }
         function handleGrandForgotClick(startWithA) { unlockAudio(); startGrandForgotTimer(startWithA); }
 
         function previewPattern(type) {
             resetAll(); isRunning = true; currentIsA = false; currentSoundType = type;
             const gMap = { 'G1':2, 'G2':4, 'G3':6, 'G4':8, 'G5':10, 'G6':12 };
-            if (gMap[type]) { currentSoundType = 'G'; currentStepNum = gMap[type]; safetyText = type + "確認"; }
-            else { safetyText = type + "確認"; }
+            if (gMap[type]) {
+                currentSoundType = 'G';
+                currentStepNum = gMap[type];
+                safetyText = grandTextsMap[currentStepNum];
+                playSafe(grandAudiosMap[currentStepNum]);
+            } else {
+                if (type === 'A' || type === 'A2') { safetyText = "線上安置"; playSafe(audioA); }
+                else if (type === 'B') { safetyText = "金網安置"; playSafe(audioB); }
+                else if (type === 'C') { safetyText = "外周真ん中安置"; playSafe(audioC); }
+            }
             updateUI();
         }
 
@@ -206,7 +219,7 @@
 
             const centerX = canvas.width / 2, centerY = canvas.height / 2, maxRadius = 158;
             const yellowAtk = "#FFEB3B", whiteSafe = "#FFFFFF", thinYellowBg = "#FFF9C4";
-            let baseColor = (currentSoundType === 'G' && drawStep !== 12) ? thinYellowBg : "#FFFFFF";
+            let baseColor = (currentSoundType === 'G') ? thinYellowBg : "#FFFFFF";
             ctx.beginPath(); ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2); ctx.fillStyle = baseColor; ctx.fill();
 
             if (currentSoundType === 'A') {
@@ -223,7 +236,7 @@
                 else if (drawStep === 6) { drawRange(ctx, centerX, centerY, maxRadius, 20, 30, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 65, 90, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 90, 100, whiteSafe); }
                 else if (drawStep === 8) { drawRange(ctx, centerX, centerY, maxRadius, 0, 20, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 80, 100, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 50, 65, whiteSafe); }
                 else if (drawStep === 10) { drawRange(ctx, centerX, centerY, maxRadius, 0, 20, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 50, 80, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 30, 50, whiteSafe); }
-                else if (drawStep === 12) { drawRange(ctx, centerX, centerY, maxRadius, 30, 50, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 80, 100, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 65, 80, thinYellowBg); }
+                else if (drawStep === 12) { drawRange(ctx, centerX, centerY, maxRadius, 30, 50, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 80, 100, yellowAtk); drawRange(ctx, centerX, centerY, maxRadius, 65, 80, whiteSafe); }
             }
             ctx.beginPath(); ctx.arc(centerX, centerY, maxRadius * 0.15, 0, Math.PI * 2); ctx.strokeStyle = "rgba(0,0,0,0.6)"; ctx.lineWidth = 2; ctx.stroke();
             drawRange(ctx, centerX, centerY, maxRadius, 30, 50, "rgba(0,0,0,0.04)", true);
@@ -253,38 +266,22 @@
             isAbsoluteFirst = isFirst;
             let seqIdx = -1;
             const grandSeq = [23, 22.25, 24.25, 22.25, 24.25, 22.5, 24.25, 22.5, 23.25, 23, 23, 23.5];
-            const grandTexts = {
-                2: "【2連】金網線上安置から", 4: "【2連】外周真ん中安置から", 6: "【2連】金網線上安置から",
-                8: "【2連】線上絶対安置", 10: "【2連】金網絶対安置", 12: "【2連】線上絶対安置"
-            };
-            const grandAudios = { 2: audioG1, 4: audioG2, 6: audioG3, 8: audioG4, 10: audioG5, 12: audioG6 };
-
             const runCycle = () => {
                 seqIdx = (seqIdx + 1) % 12;
                 currentStepNum = seqIdx + 1;
                 isLoopingToStart = (currentStepNum === 1 && !isAbsoluteFirst);
-
                 let duration = grandSeq[seqIdx];
                 if (isAbsoluteFirst && currentStepNum === 1) { duration = 6; }
-
                 currentIsA = (currentStepNum % 2 !== 0);
                 stepTotalDuration = duration;
-                
-                // 安置テキストのセット（偶数回目のみ）
-                safetyText = grandTexts[currentStepNum] || "";
-                
+                safetyText = grandTextsMap[currentStepNum] || "";
                 document.getElementById('step-counter').innerText = "グランド: " + currentStepNum + " / 12回目";
                 timeLeft = duration; let warningPlayed = false;
-
                 timerId = setInterval(() => {
                     timeLeft -= 0.016;
                     if (timeLeft <= 5 && !warningPlayed) {
-                        if (currentIsA) {
-                            playSafe(audioAka);
-                        } else {
-                            // 黄床回ごとの専用音声
-                            playSafe(grandAudios[currentStepNum] || audioKiiro);
-                        }
+                        if (currentIsA) { playSafe(audioAka); } 
+                        else { playSafe(grandAudiosMap[currentStepNum] || audioKiiro); }
                         warningPlayed = true;
                     }
                     if (timeLeft <= 0) { clearInterval(timerId); isAbsoluteFirst = false; runCycle(); }
@@ -317,13 +314,30 @@
             const sequence = [{t:21, s:'A', m:'線上安置'}, {t:23.75, s:'A2', m:'線上安置'}, {t:21, s:'B', m:'金網安置'}, {t:23, s:'A', m:'線上安置'}, {t:20.50, s:'C', m:'外周真ん中安置'}, {t:25.50, s:'B', m:'金網安置'}];
             let idx = 0, isFirstAction = true;
             const runCircleStep = () => {
-                let step = sequence[idx]; currentSoundType = step.s; currentStepNum = idx + 1;
+                let step = sequence[idx]; 
+                currentSoundType = step.s; 
+                currentStepNum = idx + 1;
                 document.getElementById('step-counter').innerText = "サークル: " + currentStepNum + " / 6回目";
-                timeLeft = (isFirstAction) ? 5 : step.t; safetyText = step.m;
+                
+                let displayMsg = step.m;
+                if (currentStepNum % 2 === 0) { displayMsg = "【遅割れ】" + step.m; }
+                
+                timeLeft = (isFirstAction) ? 5 : step.t; 
+                safetyText = displayMsg;
                 let warningPlayed = false;
+
                 timerId = setInterval(() => {
                     timeLeft -= 0.016;
-                    if (timeLeft <= 5 && !warningPlayed) { if(step.s === 'A' || step.s === 'A2') playSafe(audioA); if(step.s === 'B') playSafe(audioB); if(step.s === 'C') playSafe(audioC); warningPlayed = true; }
+                    if (timeLeft <= 5 && !warningPlayed) { 
+                        if(step.s === 'A' || step.s === 'A2') playSafe(audioA); 
+                        else if(step.s === 'B') playSafe(audioB); 
+                        else if(step.s === 'C') playSafe(audioC); 
+                        
+                        if (currentStepNum % 2 === 0) {
+                            setTimeout(() => { if (isRunning) playSafe(audioOso); }, 4800);
+                        }
+                        warningPlayed = true; 
+                    }
                     if (timeLeft <= 0) { clearInterval(timerId); isFirstAction = false; idx = (idx + 1) % sequence.length; runCircleStep(); }
                     updateUI();
                 }, 16);
